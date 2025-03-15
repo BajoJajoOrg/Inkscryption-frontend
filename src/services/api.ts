@@ -1,7 +1,7 @@
 // src/services/api.ts
-import axios, { AxiosResponse } from 'axios';
+import axios, { AxiosResponse } from "axios";
 
-const API_URL = 'http://localhost:3000/api'; 
+const API_URL = "http://localhost:3000/api";
 
 export interface CanvasData {
   id: string;
@@ -10,26 +10,55 @@ export interface CanvasData {
   data?: any;
 }
 
+export interface OcrResponse {
+  text: string;
+}
+
 export const getAllCanvases = async (): Promise<CanvasData[]> => {
-  const response: AxiosResponse<CanvasData[]> = await axios.get(`${API_URL}/canvases`);
+  const response: AxiosResponse<CanvasData[]> = await axios.get(
+    `${API_URL}/canvases`
+  );
   return response.data;
 };
 
 export const getCanvasById = async (id: string): Promise<CanvasData> => {
-  const response: AxiosResponse<CanvasData> = await axios.get(`${API_URL}/canvases/${id}`);
+  const response: AxiosResponse<CanvasData> = await axios.get(
+    `${API_URL}/canvases/${id}`
+  );
   return response.data;
 };
 
 export const createCanvas = async (title: string): Promise<CanvasData> => {
-  const response: AxiosResponse<CanvasData> = await axios.post(`${API_URL}/canvases`, { title });
+  const response: AxiosResponse<CanvasData> = await axios.post(
+    `${API_URL}/canvases`,
+    { title }
+  );
   return response.data;
 };
 
-export const updateCanvas = async (id: string, data: any): Promise<CanvasData> => {
-  const response: AxiosResponse<CanvasData> = await axios.put(`${API_URL}/canvases/${1}`, { data });
+export const updateCanvas = async (
+  id: string,
+  data: any
+): Promise<CanvasData> => {
+  const response: AxiosResponse<CanvasData> = await axios.put(
+    `${API_URL}/canvases/${1}`,
+    { data }
+  );
   return response.data;
 };
 
 export const deleteCanvas = async (id: string): Promise<void> => {
   await axios.delete(`${API_URL}/canvases/${id}`);
+};
+
+export const getOcr = async (data: Blob) => {
+  const formData = new FormData();
+  formData.append("image", data);
+  const response: AxiosResponse<OcrResponse> = await axios.post(
+    `${API_URL}/ocr`,
+    {
+      formData,
+    }
+  );
+  return response.data;
 };

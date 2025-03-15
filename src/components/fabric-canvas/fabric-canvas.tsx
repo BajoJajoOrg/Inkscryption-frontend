@@ -8,6 +8,7 @@ import {
 import * as fabric from "fabric";
 import { useWindowSize } from "react-use";
 import "./fabric-canvas.css";
+import { getOcr } from "../../services/api";
 
 type TCanvasMode = "draw" | "erase" | "select";
 
@@ -184,24 +185,13 @@ export const FabricCanvas = () => {
 
     const blob = await canvas.toBlob({
       format: "png",
-      multiplier: 1,
+      multiplier: 0.2,
     });
 
     if (!blob) return;
 
-    const formData = new FormData();
-    formData.append("image", blob);
-
-    fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    })
-      .then((res) => res.text())
-      .then((text) => {
-        console.log("Server response:", text);
-        setText(text);
-      })
-      .catch((err) => console.error("Upload failed:", err));
+    const response = await getOcr(blob);
+    setText(response.text);
   }, []);
 
   const toggleDrawingMode = () => {
