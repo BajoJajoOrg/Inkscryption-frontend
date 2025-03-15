@@ -15,52 +15,45 @@ export const FabricCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fabricRef = useRef<fabric.Canvas | null>(null);
 
-  const [history, setHistory] = useState<fabric.Object[][]>([]);
+  const [history, setHistory] = useState<string[]>([]);
+  const [undoneHistory, setUndoneHistory] = useState<string[]>([]);
 
-  // Keep the mode in state so the UI can re-render if needed
   const [mode, setMode] = useState<TCanvasMode>("draw");
 
-  // Use the window size from react-use, to set up canvas dimensions
   const { width, height } = useWindowSize();
 
-  // Instead of a boolean state for mouse down/up, keep it in a ref
-  // (so we don’t trigger re-renders on pointerdown/pointerup).
   const isMouseDownRef = useRef(false);
 
-  // -------------------------
-  // 1) SETUP & DISPOSE FABRIC (once)
-  // -------------------------
   useLayoutEffect(() => {
     if (!canvasRef.current) return;
 
     const canvas = new fabric.Canvas(canvasRef.current, {
-      isDrawingMode: true, // default
-      width: width,
-      height: height,
+      width,
+      height,
+      isDrawingMode: true,
       selection: true,
+      backgroundColor: "#ffffff",
     });
-
     fabricRef.current = canvas;
 
-    // Attach creation/modification handlers only once
-    const handleObjectCreated = () => saveHistory();
-    const handleObjectModified = () => saveHistory();
+    const handlePathCreated = () => {
+      saveHistory();
+    };
 
-    canvas.on("path:created", handleObjectCreated);
+    const handleObjectModified = () => {
+      saveHistory();
+    };
+
+    canvas.on("path:created", handlePathCreated);
     canvas.on("object:modified", handleObjectModified);
 
     return () => {
-      canvas.off("path:created", handleObjectCreated);
+      canvas.off("path:created", handlePathCreated);
       canvas.off("object:modified", handleObjectModified);
       canvas.dispose();
     };
-    // We only want this effect to run if the width/height changes
-    // Or if the actual ref changes. Usually once at mount, or on resize
   }, [width, height]);
 
-  // -------------------------
-  // 2) MOUSE DOWN / UP EVENTS (avoid state => use ref)
-  // -------------------------
   useEffect(() => {
     const handlePointerDown = () => {
       isMouseDownRef.current = true;
@@ -71,6 +64,7 @@ export const FabricCanvas = () => {
 
     window.addEventListener("pointerdown", handlePointerDown);
     window.addEventListener("pointerup", handlePointerUp);
+    saveHistory();
 
     return () => {
       window.removeEventListener("pointerdown", handlePointerDown);
@@ -78,48 +72,33 @@ export const FabricCanvas = () => {
     };
   }, []);
 
-  // -------------------------
-  // 3) MODE & BRUSH SETTINGS
-  // -------------------------
   useEffect(() => {
     const canvas = fabricRef.current;
     if (!canvas) return;
 
-    // First, remove any leftover "mouse:move" handlers from erase mode.
     canvas.off("mouse:move");
-
-    // The default is that objects are selectable, so let's explicitly
-    // handle that depending on the mode:
-
     if (mode === "select") {
-      // SELECT mode:
       canvas.isDrawingMode = false;
-      canvas.selection = true; // allow group selection
-      canvas.skipTargetFind = false; // let mouse events find the target
+      canvas.selection = true;
+      canvas.skipTargetFind = false;
       canvas.getObjects().forEach((obj) => (obj.selectable = true));
     } else if (mode === "draw") {
-      // DRAW mode:
       canvas.isDrawingMode = true;
-      canvas.selection = false; // no group selection
-      canvas.skipTargetFind = false; // allow picking up objects if needed (optional)
+      canvas.selection = false;
+      canvas.skipTargetFind = false;
       canvas.getObjects().forEach((obj) => (obj.selectable = false));
-
-      // Pencil brush
       const brush = new fabric.PencilBrush(canvas);
       brush.width = 3;
       brush.color = "#000000";
       canvas.freeDrawingBrush = brush;
     } else if (mode === "erase") {
-      // ERASE mode:
       canvas.isDrawingMode = false;
       canvas.selection = false;
       canvas.skipTargetFind = false;
       canvas.getObjects().forEach((obj) => (obj.selectable = false));
 
-      // Attach erase handler
       /* eslint-disable  @typescript-eslint/no-explicit-any */
       const handleMouseMove = (options: any) => {
-        // Only erase if pointer is down & there's a target
         if (isMouseDownRef.current && options.target) {
           canvas.remove(options.target);
           saveHistory();
@@ -127,49 +106,76 @@ export const FabricCanvas = () => {
       };
       canvas.on("mouse:move", handleMouseMove);
     }
-  }, [mode]);
+    const newHistory = history.slice(0);
+    if (history.length > 0) loadJSON(newHistory[newHistory.length - 1]);
+  }, [mode, width, height]);
 
-  // -------------------------
-  // 4) HISTORY
-  // -------------------------
   const saveHistory = useCallback(() => {
     const canvas = fabricRef.current;
     if (!canvas) return;
+    const json = JSON.stringify(canvas.toJSON());
+    setHistory((prev) => [...prev, json]);
+    setUndoneHistory([]);
+  }, []);
 
-    // Clone each object on the canvas so we can revert to it later
-    const objects = canvas.getObjects().map((obj) => obj.clone());
-    Promise.all(objects).then((clones) => {
-      setHistory((prev) => [...prev, clones as fabric.Object[]]);
+  const loadJSON = useCallback((jsonString: string) => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+
+    canvas.loadFromJSON(jsonString, () => {
+      canvas.getObjects().forEach((obj) => obj.setCoords());
+      setTimeout(() => {
+        canvas.renderAll();
+      }, 0);
     });
   }, []);
 
   const handleUndo = useCallback(() => {
-    const canvas = fabricRef.current;
-    if (!canvas || history.length === 0) return;
-
-    // We want to revert to the previous state
-    const previousIndex = history.length - 2;
-    const previousState = history[previousIndex];
-
-    // If there's a previous state, revert to it
-    if (previousState) {
-      canvas.clear();
-      previousState.forEach((obj) => canvas.add(obj));
-      canvas.renderAll();
-
-      // Trim off the last state
-      setHistory((prev) => prev.slice(0, -1));
-    } else {
-      canvas.clear();
-      setHistory([]);
+    if (history.length <= 1) {
+      return;
     }
+    const currentJSON = history[history.length - 1];
+    setUndoneHistory((prev) => [...prev, currentJSON]);
+    const newHistory = history.slice(0, -1);
+    setHistory(newHistory);
+    loadJSON(newHistory[newHistory.length - 1]);
+  }, [history, loadJSON]);
+
+  const handleRedo = useCallback(() => {
+    if (undoneHistory.length === 0) {
+      return;
+    }
+    const redoneJSON = undoneHistory[undoneHistory.length - 1];
+    setUndoneHistory((prev) => prev.slice(0, -1));
+    setHistory((prev) => [...prev, redoneJSON]);
+    loadJSON(redoneJSON);
+  }, [undoneHistory, loadJSON]);
+
+  const handleSaveCanvas = useCallback(() => {
+    console.log(history[history.length - 1]);
   }, [history]);
 
-  // -------------------------
-  // 5) TOGGLE MODES
-  // -------------------------
+  const handleGetText = useCallback(() => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+
+    // Convert to DataURL
+    const dataURL = canvas.toDataURL({
+      format: "png",
+      multiplier: 2,
+    });
+
+    // Option A: open in new tab
+    // window.open(dataURL);
+
+    // Option B: download programmatically:
+    const link = document.createElement("a");
+    link.href = dataURL;
+    link.download = "my-canvas.png";
+    link.click();
+  }, []);
+
   const toggleDrawingMode = () => {
-    // If we're currently "draw" or "erase", switch to "select"; else switch to "draw"
     setMode((prev) => {
       if (prev === "draw" || prev === "erase") {
         return "select";
@@ -183,37 +189,34 @@ export const FabricCanvas = () => {
     setMode((prev) => (prev === "erase" ? "draw" : "erase"));
   };
 
-  // Handy helpers for UI labels
   const isDrawing = mode === "draw" || mode === "erase";
   const isErasing = mode === "erase";
 
   return (
     <div>
-      <div>
-        {/* Tools */}
+      <div
+        style={{
+          display: "grid",
+          padding: "10px",
+          height: "100px",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gap: "10px",
+          position: "absolute",
+          zIndex: 100,
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      >
         <button onClick={toggleDrawingMode}>
-          <span>Mode:</span> {isDrawing ? "Draw" : "Select"}
+          <span>Режим:</span> {isDrawing ? "Кисть" : "Перемещение"}
         </button>
         <button onClick={toggleEraseMode}>
-          <span>Brush:</span> {isErasing ? "Erase" : "Draw"}
+          <span>Кисть:</span> {isErasing ? "Ластик" : "Обычная"}
         </button>
-        <button onClick={handleUndo}>Undo</button>
-        <button onClick={handleUndo}>Redo</button>
-        <button onClick={handleUndo}>Save</button>
-        <button
-          onClick={() => {
-            const canvas = fabricRef.current;
-            if (!canvas) return;
-
-            // remove active object
-            const activeObject = canvas.getActiveObject();
-            if (activeObject) {
-              canvas.remove(activeObject);
-            }
-          }}
-        >
-          To text
-        </button>
+        <button onClick={handleUndo}>Отменить</button>
+        <button onClick={handleRedo}>Повторить</button>
+        <button onClick={handleSaveCanvas}>Сохранить</button>
+        <button onClick={handleGetText}>В текст</button>
       </div>
 
       <div className="canvas-wrap">
