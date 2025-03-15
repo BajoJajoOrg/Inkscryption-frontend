@@ -11,9 +11,32 @@ import "./fabric-canvas.css";
 
 type TCanvasMode = "draw" | "erase" | "select";
 
+interface IResultDiv {
+  text: string;
+}
+const ResultDiv = ({ text }: IResultDiv) => {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "50%",
+        right: 0,
+        backgroundColor: "darkgray",
+        color: "white",
+        padding: "10px",
+        boxSizing: "border-box",
+      }}
+    >
+      {text}
+    </div>
+  );
+};
+
 export const FabricCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fabricRef = useRef<fabric.Canvas | null>(null);
+
+  const [text, setText] = useState("");
 
   const [history, setHistory] = useState<string[]>([]);
   const [undoneHistory, setUndoneHistory] = useState<string[]>([]);
@@ -155,24 +178,30 @@ export const FabricCanvas = () => {
     console.log(history[history.length - 1]);
   }, [history]);
 
-  const handleGetText = useCallback(() => {
+  const handleGetText = useCallback(async () => {
     const canvas = fabricRef.current;
     if (!canvas) return;
 
-    // Convert to DataURL
-    const dataURL = canvas.toDataURL({
+    const blob = await canvas.toBlob({
       format: "png",
-      multiplier: 2,
+      multiplier: 1,
     });
 
-    // Option A: open in new tab
-    // window.open(dataURL);
+    if (!blob) return;
 
-    // Option B: download programmatically:
-    const link = document.createElement("a");
-    link.href = dataURL;
-    link.download = "my-canvas.png";
-    link.click();
+    const formData = new FormData();
+    formData.append("image", blob);
+
+    fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    })
+      .then((res) => res.text())
+      .then((text) => {
+        console.log("Server response:", text);
+        setText(text);
+      })
+      .catch((err) => console.error("Upload failed:", err));
   }, []);
 
   const toggleDrawingMode = () => {
@@ -222,6 +251,7 @@ export const FabricCanvas = () => {
       <div className="canvas-wrap">
         <canvas ref={canvasRef} />
       </div>
+      <ResultDiv text={text} />
     </div>
   );
 };
