@@ -1,13 +1,12 @@
-import { FabricCanvas } from "../components/fabric-canvas/fabric-canvas";
-// import useSocket from "../hooks/useSocket";
+// src/pages/Home.tsx
+import CanvasGrid from '../components/CanvasGrid/CanvasGrid';
 
 const Home: React.FC = () => {
-  // const { socket, isConnected } = useSocket();
-
   return (
-    <div>
-      <FabricCanvas />
-    </div>
+    <>
+      <h2>Мои канвасы</h2>
+      <CanvasGrid />
+    </>
   );
 };
 
