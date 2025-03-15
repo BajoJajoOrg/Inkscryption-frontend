@@ -1,7 +1,7 @@
 // src/services/api.ts
 import axios, { AxiosResponse } from "axios";
 
-const API_URL = "http://localhost:3000/api";
+const API_URL = "http://localhost:8087/api/v1";
 
 export interface CanvasData {
   id: string;
@@ -54,11 +54,13 @@ export const deleteCanvas = async (id: string): Promise<void> => {
 export const getOcr = async (data: Blob) => {
   const formData = new FormData();
   formData.append("image", data);
+  for (const [key, value] of formData.entries()) {
+    console.log("Key:", key, "Value:", value);
+  }
+  console.log({data})
   const response: AxiosResponse<OcrResponse> = await axios.post(
-    `${API_URL}/ocr`,
-    {
+    `${API_URL}/add`,
       formData,
-    }
   );
   return response.data;
 };
