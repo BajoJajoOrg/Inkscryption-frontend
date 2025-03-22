@@ -1,10 +1,7 @@
-import { FabricCanvas } from '../components/fabric-canvas/fabric-canvas';
+import { FabricCanvas } from "../components/FabricCanvas/FabricCanvas";
 
 const CanvasPage: React.FC = () => {
-
-  return (
-    <FabricCanvas />    
-  );
+  return <FabricCanvas />;
 };
 
 export default CanvasPage;
