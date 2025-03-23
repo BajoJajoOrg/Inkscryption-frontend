@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { useState } from 'react';
 import styles from './styles.module.scss';
-
 
 interface DatePickerProps {
     onDateRangeChange: (startDate: string | null, endDate: string | null) => void;
@@ -14,12 +12,20 @@ const DatePicker: React.FC<DatePickerProps> = ({ onDateRangeChange }) => {
 
     const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newStartDate = e.target.value;
+        if (endDate && newStartDate > endDate) {
+            setEndDate(null);
+            onDateRangeChange(newStartDate, null);
+        } else {
+            onDateRangeChange(newStartDate, endDate);
+        }
         setStartDate(newStartDate);
-        onDateRangeChange(newStartDate, endDate);
     };
 
     const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newEndDate = e.target.value;
+        if (startDate && newEndDate < startDate) {
+            return;
+        }
         setEndDate(newEndDate);
         onDateRangeChange(startDate, newEndDate);
     };
@@ -30,6 +36,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ onDateRangeChange }) => {
                 type="date"
                 value={startDate || ''}
                 onChange={handleStartDateChange}
+                max={endDate || undefined}
                 className={styles.dateInput}
                 placeholder="Начальная дата"
             />
@@ -38,6 +45,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ onDateRangeChange }) => {
                 type="date"
                 value={endDate || ''}
                 onChange={handleEndDateChange}
+                min={startDate || undefined} 
                 className={styles.dateInput}
                 placeholder="Конечная дата"
             />

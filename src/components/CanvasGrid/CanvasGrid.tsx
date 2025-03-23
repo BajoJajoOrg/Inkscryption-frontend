@@ -46,7 +46,6 @@ const CanvasGrid: React.FC = () => {
     const filteredCanvases = canvases.filter(canvas => {
         const titleMatch = canvas.title.toLowerCase().includes(searchTitle.toLowerCase());
         
-        // Преобразуем дату из формата дд.мм.гггг в объект Date для сравнения
         const [day, month, year] = canvas.createdAt.split('.');
         const canvasDate = new Date(`${year}-${month}-${day}`);
         
