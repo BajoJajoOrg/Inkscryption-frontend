@@ -10,8 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/query-sync-storage-persister": "^5.69.0",
+    "@tanstack/react-query": "^5.69.0",
+    "@tanstack/react-query-persist-client": "^5.69.0",
     "@types/react-router-dom": "^5.3.3",
     "@types/socket.io-client": "^3.0.0",
+    "antd": "^5.24.4",
     "axios": "^1.8.3",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.13",
