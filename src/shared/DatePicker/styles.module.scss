@@ -1,0 +1,24 @@
+.datePickerContainer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dateInput {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 150px;
+    background: whitesmoke;
+
+    &:focus {
+        outline: none;
+        border-color: #939fac;
+    }
+}
+
+.separator {
+    font-size: 16px;
+    color: #666;
+}
