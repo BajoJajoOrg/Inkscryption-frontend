@@ -2,7 +2,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Home from '../pages/Home';
 import CanvasPage from '../pages/CanvasPage';
 import NotFound from '../pages/NotFound';
-import { QueryClient } from '@tanstack/react-query';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const isAuthenticated = true;

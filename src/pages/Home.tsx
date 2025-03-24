@@ -1,5 +1,4 @@
-import { CanvasFilter, CanvasGrid } from ':components';
-import { ProtectedLayout } from ':components/ProtectedLayout';
+import { CanvasFilter, CanvasGrid, ProtectedLayout } from ':components';
 import { CanvasData, getAllCanvases } from ':services/api';
 import { useEffect, useState } from 'react';
 
