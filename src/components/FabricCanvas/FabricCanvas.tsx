@@ -18,8 +18,9 @@ import {
   loadCanvasState,
 } from "../../lib/canvas/canvasHistory";
 import { extractTextFromCanvas } from "../../lib/canvas/canvasExtractText";
-
-type TCanvasMode = "draw" | "erase" | "select";
+import { Toolbar } from "../CanvasToolbar/CanvasToolbar";
+import { EditableTextToolbar } from "../TextToolbar/TextToolbar";
+import { TCanvasMode } from "../../lib/canvas/types";
 
 export const FabricCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -28,9 +29,13 @@ export const FabricCanvas = () => {
   const [history, setHistory] = useState<string[]>([]);
   const [undoneHistory, setUndoneHistory] = useState<string[]>([]);
   const [mode, setMode] = useState<TCanvasMode>("draw");
+  const [isEditingText, setIsEditingText] = useState(false);
+
+  const currentObj = useRef<fabric.FabricObject>(undefined);
 
   const { width, height } = useWindowSize();
   const isMouseDownRef = useRef(false);
+  const modeRef = useRef<TCanvasMode>("draw");
 
   const saveHistory = useCallback(() => {
     const canvas = fabricRef.current;
@@ -46,8 +51,26 @@ export const FabricCanvas = () => {
     loadCanvasState(canvas, json);
   }, []);
 
+  const applyCurrentMode = useCallback(() => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    applyCanvasMode(
+      canvas,
+      modeRef.current,
+      isMouseDownRef,
+      saveHistory,
+      loadJSON,
+      history,
+      (mode) => {
+        setMode(mode);
+      },
+      modeRef
+    );
+  }, [saveHistory, loadJSON, history]);
+
   useLayoutEffect(() => {
     if (!canvasRef.current) return () => {};
+
     const canvas = initializeCanvas({
       canvasRef: canvasRef.current,
       width,
@@ -55,28 +78,24 @@ export const FabricCanvas = () => {
       saveHistory,
     });
     fabricRef.current = canvas;
+    applyCurrentMode();
+    canvas.on("text:editing:entered", () => {
+      setIsEditingText(true);
+      currentObj.current = canvas.getActiveObject();
+      console.log("ENTERED EDIT MODE");
+    });
+    canvas.on("text:editing:exited", () => {
+      setIsEditingText(false);
+    });
 
     return () => canvas.dispose();
-  }, [width, height, saveHistory]);
+  }, [width, height, saveHistory, applyCurrentMode]);
 
   useEffect(() => {
     const cleanup = registerPointerTracking(isMouseDownRef);
     saveHistory();
     return cleanup;
   }, [saveHistory]);
-
-  useEffect(() => {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
-    applyCanvasMode(
-      canvas,
-      mode,
-      isMouseDownRef,
-      saveHistory,
-      loadJSON,
-      history
-    );
-  }, [mode, width, height, saveHistory, loadJSON, history]);
 
   const handleUndo = useCallback(() => {
     if (history.length <= 1) return;
@@ -92,6 +111,7 @@ export const FabricCanvas = () => {
     const redoneJSON = undoneHistory[undoneHistory.length - 1];
     setUndoneHistory((prev) => prev.slice(0, -1));
     setHistory((prev) => [...prev, redoneJSON]);
+    console.log(redoneJSON);
     loadJSON(redoneJSON);
   }, [undoneHistory, loadJSON]);
 
@@ -110,42 +130,44 @@ export const FabricCanvas = () => {
     setMode((prev) =>
       prev === "draw" || prev === "erase" ? "select" : "draw"
     );
+    modeRef.current =
+      modeRef.current === "draw" || modeRef.current === "erase"
+        ? "select"
+        : "draw";
   };
 
   const toggleEraseMode = () => {
     setMode((prev) => (prev === "erase" ? "draw" : "erase"));
+    modeRef.current = modeRef.current === "erase" ? "draw" : "erase";
   };
-
-  const isDrawing = mode === "draw" || mode === "erase";
-  const isErasing = mode === "erase";
 
   return (
     <div>
-      <div
-        style={{
-          display: "grid",
-          padding: "10px",
-          height: "100px",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: "10px",
-          position: "absolute",
-          zIndex: 100,
-          width: "100%",
-          boxSizing: "border-box",
+      <Toolbar
+        isDrawing={mode === "draw" || mode === "erase"}
+        isErasing={mode === "erase"}
+        onToggleDrawing={() => {
+          toggleDrawingMode();
+          applyCurrentMode();
         }}
-      >
-        <button onClick={toggleDrawingMode}>
-          <span>Режим:</span> {isDrawing ? "Кисть" : "Перемещение"}
-        </button>
-        <button onClick={toggleEraseMode}>
-          <span>Кисть:</span> {isErasing ? "Ластик" : "Обычная"}
-        </button>
-        <button onClick={handleUndo}>Отменить</button>
-        <button onClick={handleRedo}>Повторить</button>
-        <button onClick={handleSaveCanvas}>Сохранить</button>
-        <button onClick={handleGetText}>В текст</button>
-      </div>
-
+        onToggleErase={() => {
+          toggleEraseMode();
+          applyCurrentMode();
+        }}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onSave={handleSaveCanvas}
+        onExtractText={handleGetText}
+        onSetTextMode={() => {
+          setMode("text");
+          modeRef.current = "text";
+          applyCurrentMode();
+        }}
+      />
+      <EditableTextToolbar
+        canvas={fabricRef.current ?? null}
+        isEditingText={isEditingText}
+      />
       <div className="canvas-wrap">
         <canvas ref={canvasRef} />
       </div>

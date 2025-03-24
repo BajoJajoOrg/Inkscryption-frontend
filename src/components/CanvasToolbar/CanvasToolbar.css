@@ -1,0 +1,39 @@
+.toolbar__icon {
+  width: min(4dvh, 4dvw);
+  aspect-ratio: 1;
+}
+
+.toolbar__button {
+  all: unset;
+  display: flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(255, 255, 255);
+  border-radius: min(2dvh, 2dvw);
+  padding: min(2dvw, 2dvh);
+
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.toolbar__button:hover {
+  background-color: antiquewhite;
+}
+
+.toolbar__content {
+  display: flex;
+  flex-direction: row;
+  gap: min(2dvw, 2dvh);
+  box-sizing: border-box;
+  width: fit-content;
+}
+
+.toolbar {
+  position: absolute;
+  z-index: 10000;
+  bottom: 10%;
+  justify-items: center;
+
+  width: 100%;
+}
