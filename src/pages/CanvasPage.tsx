@@ -1,6 +1,7 @@
 import { ProtectedLayout } from ':components';
 import { FabricCanvas } from '../components/FabricCanvas/FabricCanvas';
 import { useParams } from 'react-router-dom';
+import { CanvasTextDrawer } from ':components/CanvasTextDrawer/CanvasTextDrawer';
 
 const CanvasPage: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
@@ -15,6 +16,7 @@ const CanvasPage: React.FC = () => {
 					<>
 						<h1>{canvas.title}</h1>
 						<FabricCanvas />
+						<CanvasTextDrawer />
 					</>
 				);
 			}}

@@ -18,6 +18,7 @@
     "antd": "^5.24.4",
     "axios": "^1.8.3",
     "classnames": "^2.5.1",
+    "clsx": "^2.1.1",
     "dayjs": "^1.11.13",
     "fabric": "^6.6.1",
     "fabricjs-react": "^1.2.2",

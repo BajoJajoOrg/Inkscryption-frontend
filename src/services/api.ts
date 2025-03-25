@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8087/api/v1';
+const API_URL = 'https://api.hooli-pishem.ru/api/v1';
 
 export interface CanvasData {
 	id: string;
@@ -24,7 +24,7 @@ export const getCanvasById = async (id: string): Promise<CanvasData> => {
 };
 
 export const createCanvas = async (title: string): Promise<CanvasData> => {
-	const response = await fetch(`${API_URL}/canvases`, {
+	const response = await fetch(`${API_URL}/add`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ title }),
