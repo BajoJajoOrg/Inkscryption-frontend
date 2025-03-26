@@ -13,6 +13,7 @@ import { TCanvasMode } from '../../lib/canvas/types';
 import { BlobToJSON, JSONtoBlob } from '../../lib/canvas/blobConversion';
 import { useParams } from 'react-router-dom';
 import { getCanvasById, updateCanvas } from ':services/api';
+import axios from 'axios';
 
 export const FabricCanvas = () => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -70,6 +71,8 @@ export const FabricCanvas = () => {
 		getCanvasById(id || '0').then(async (res) => {
 			console.log(res.canvases[0].canvas_url);
 			const data = res.canvases[0].canvas_url;
+			const file = await axios.get(data);
+			console.log({ file });
 			const extractedData = await BlobToJSON(data);
 			loadJSON(extractedData);
 			const json = saveCanvasState(canvas);
