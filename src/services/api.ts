@@ -88,7 +88,7 @@ export const deleteCanvas = async (id: string): Promise<void> => {
 export const getOcr = async (data: Blob): Promise<OcrResponse> => {
 	const formData = new FormData();
 	formData.append('image', data);
-	const response = await fetch(`${API_URL}/add`, {
+	const response = await fetch(`${API_URL}/getML`, {
 		method: 'POST',
 		body: formData,
 	});
