@@ -68,7 +68,9 @@ export const FabricCanvas = () => {
 		applyCurrentMode();
 
 		getCanvasById(id || '0').then(async (res) => {
-			const extractedData = await BlobToJSON(res);
+			console.log(res.canvases[0].canvas_url);
+			const data = res.canvases[0].canvas_url;
+			const extractedData = await BlobToJSON(data);
 			loadJSON(extractedData);
 			const json = saveCanvasState(canvas);
 			setHistory([json]);

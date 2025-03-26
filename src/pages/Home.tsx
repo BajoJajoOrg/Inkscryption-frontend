@@ -1,57 +1,44 @@
+import { useQuery } from '@tanstack/react-query';
 import { CanvasFilter, CanvasGrid, ProtectedLayout } from ':components';
-import { CanvasData, getAllCanvases } from ':services/api';
-import { useEffect, useState } from 'react';
+import { getAllCanvases, CanvasData } from ':services/api';
+import { useState } from 'react';
 
 const Home: React.FC = () => {
-	const [canvases, setCanvases] = useState<CanvasData[]>([
-		{ id: '1', title: 'dsfgf', createdAt: '23.03.2025' },
-	]);
 	const [searchTitle, setSearchTitle] = useState('');
 	const [dateRange, setDateRange] = useState<[string | null, string | null]>([null, null]);
 
-	useEffect(() => {
-		const fetchCanvases = async () => {
-			try {
-				const data = await getAllCanvases();
-				setCanvases(data);
-			} catch (error) {
-				console.error('Ошибка загрузки канвасов:', error);
-			}
-		};
-		fetchCanvases();
-	}, []);
+	// Форматируем дату в YYYYMMDD:YYYYMMDD
+	const formatDateForQuery = (date: string | null): string => {
+		if (!date) return '';
+		const d = new Date(date);
+		return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(
+			2,
+			'0'
+		)}`;
+	};
 
-	const filteredCanvases = canvases.filter((canvas) => {
-		const titleMatch = canvas.title.toLowerCase().includes(searchTitle.toLowerCase());
-		const [day, month, year] = canvas.createdAt.split('.');
-		const canvasDate = new Date(`${year}-${month}-${day}`);
+	const createdAtQuery =
+		dateRange[0] || dateRange[1]
+			? `${formatDateForQuery(dateRange[0])}:${formatDateForQuery(dateRange[1])}`
+			: '';
 
-		let dateMatch = true;
-		if (dateRange[0]) {
-			const start = new Date(dateRange[0]);
-			dateMatch = dateMatch && canvasDate >= start;
-		}
-		if (dateRange[1]) {
-			const end = new Date(dateRange[1]);
-			dateMatch = dateMatch && canvasDate <= end;
-		}
-
-		return titleMatch && dateMatch;
+	const { data, isLoading, error } = useQuery<CanvasData[]>({
+		queryKey: ['canvases', searchTitle, createdAtQuery],
+		queryFn: () => getAllCanvases({ name: searchTitle, created_at: createdAtQuery }),
 	});
 
+	if (isLoading) return <div>Загрузка...</div>;
+	if (error) return <div>Ошибка: {(error as Error).message}</div>;
+
 	return (
-		<ProtectedLayout>
-			{(canvases) => (
-				<>
-					<CanvasFilter
-						searchTitle={searchTitle}
-						setSearchTitle={setSearchTitle}
-						dateRange={dateRange}
-						setDateRange={setDateRange}
-					/>
-					<CanvasGrid canvases={filteredCanvases} />
-				</>
-			)}
+		<ProtectedLayout canvases={data ? data : []}>
+			<CanvasFilter
+				searchTitle={searchTitle}
+				setSearchTitle={setSearchTitle}
+				dateRange={dateRange}
+				setDateRange={setDateRange}
+			/>
+			<CanvasGrid canvases={data ? data : []} />
 		</ProtectedLayout>
 	);
 };
