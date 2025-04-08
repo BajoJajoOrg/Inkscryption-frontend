@@ -44,7 +44,11 @@ export const getAllCanvases = async ({
 export const getCanvasById = async (id: string): Promise<CanvasData[]> => {
 	const response = await fetch(`${API_URL}/get?id=${id}`);
 	if (!response.ok) throw new Error(`Failed to fetch canvas ${id}`);
-	return response.json();
+	const canvasData = await response.json();
+	console.log(canvasData);
+	const jsonURL = canvasData.canvases[0].canvas_url;
+	const canvasObject = await fetch(jsonURL);
+	return await canvasObject.json();
 };
 
 // export const createCanvas = async (title: string): Promise<CanvasData> => {
@@ -62,7 +66,7 @@ export const createCanvas = async (name: string): Promise<CanvasData> => {
 	return response.data;
 };
 
-export const updateCanvas = async (id: string, data: any): Promise<CanvasData> => {
+export const updateCanvas = async (id: string, data: any) => {
 	const formData = new FormData();
 	formData.append('image', data);
 
@@ -74,8 +78,7 @@ export const updateCanvas = async (id: string, data: any): Promise<CanvasData> =
 	});
 
 	console.log({ response });
-	if (!response.ok) throw new Error('Failed to process OCR');
-	return response.json();
+	if (!response.ok) throw new Error('Failed to update canvas');
 };
 
 export const deleteCanvas = async (id: string): Promise<void> => {

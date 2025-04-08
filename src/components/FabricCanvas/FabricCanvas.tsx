@@ -1,19 +1,21 @@
 // components/FabricCanvas.tsx
 import { useRef, useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import * as fabric from 'fabric';
-import './FabricCanvas.css';
+import styles from './FabricCanvas.module.scss';
 
-import { initializeCanvas } from '../../lib/canvas/initCanvas';
-import { applyCanvasMode } from '../../lib/canvas/applyCanvasMode';
-import { registerPointerTracking } from '../../lib/canvas/pointerTracking';
-import { saveCanvasState, loadCanvasState } from '../../lib/canvas/canvasHistory';
-import { extractTextFromCanvas } from '../../lib/canvas/canvasExtractText';
 import { Toolbar } from '../CanvasToolbar/CanvasToolbar';
-import { TCanvasMode } from '../../lib/canvas/types';
-import { BlobToJSON, JSONtoBlob } from '../../lib/canvas/blobConversion';
+import {
+	JSONtoBlob,
+	TCanvasMode,
+	saveCanvasState,
+	loadCanvasState,
+	extractTextFromCanvas,
+	registerPointerTracking,
+	applyCanvasMode,
+	initializeCanvas,
+} from ':lib/canvas';
 import { useParams } from 'react-router-dom';
 import { getCanvasById, updateCanvas } from ':services/api';
-import axios from 'axios';
 
 export const FabricCanvas = () => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -69,14 +71,8 @@ export const FabricCanvas = () => {
 		applyCurrentMode();
 
 		getCanvasById(id || '0').then(async (res) => {
-			console.log(res.canvases[0].canvas_url);
-			const data = res.canvases[0].canvas_url;
-			const file = await axios.get(data);
-			console.log({ file });
-			const extractedData = await BlobToJSON(data);
-			loadJSON(extractedData);
-			const json = saveCanvasState(canvas);
-			setHistory([json]);
+			loadJSON(res);
+			setHistory([res]);
 		});
 	}, [applyCurrentMode, saveHistory, id, loadJSON]);
 
@@ -121,11 +117,7 @@ export const FabricCanvas = () => {
 
 	const handleSaveCanvas = useCallback(async () => {
 		const saveData = history[history.length - 1];
-		// console.log(saveData);
 		const blob = JSONtoBlob(saveData);
-		// console.log(blob);
-		// const extractedData = await BlobToJSON(blob);
-		// console.log(extractedData === saveData);
 		updateCanvas(id || '0', blob);
 	}, [history, id]);
 
@@ -171,7 +163,7 @@ export const FabricCanvas = () => {
 				onSave={handleSaveCanvas}
 				onExtractText={handleGetText}
 			/>
-			<div ref={containerRef} className="canvas-wrap">
+			<div ref={containerRef} className={styles.canvasWrap}>
 				<canvas ref={canvasRef} />
 			</div>
 		</div>

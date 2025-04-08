@@ -5,14 +5,22 @@ export function saveCanvasState(canvas: fabric.Canvas): string {
 }
 
 export function loadCanvasState(canvas: fabric.Canvas, json: string) {
-	console.log('CALLED CANVAS LOAD');
-	canvas.loadFromJSON(json, () => {
-		canvas.getObjects().forEach((obj) => {
-			if (obj.type === 'textbox') {
-				obj.set('objectCaching', false);
-			}
-			obj.setCoords();
+	console.log(json);
+	if (!json) {
+		return;
+	}
+	try {
+		canvas.loadFromJSON(json, () => {
+			canvas.getObjects().forEach((obj) => {
+				if (obj.type === 'textbox') {
+					obj.set('objectCaching', false);
+				}
+				obj.setCoords();
+			});
 		});
-	});
+	} catch {
+		console.error('Ошибка при восстановлении канваса.');
+	}
+
 	canvas.requestRenderAll();
 }

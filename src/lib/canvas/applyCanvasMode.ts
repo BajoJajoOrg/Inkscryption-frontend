@@ -92,7 +92,6 @@ export function applyCanvasMode(
 
 function renderIcon(icon: any) {
 	return function (ctx: any, left: any, top: any, _styleOverride: any, fabricObject: any) {
-		console.log('render called');
 		const size = this.cornerSize;
 		ctx.save();
 		ctx.translate(left, top);
