@@ -1,12 +1,14 @@
-import axios from 'axios';
+const API_URL = import.meta.env.VITE_API_URL as string;
 
-const API_URL = 'https://api.hooli-pishem.ru/api/v1';
-
+// Интерфейсы
 export interface CanvasData {
 	id: number;
 	canvas_name: string;
 	update_time: string;
 	canvas_url: string;
+}
+
+export interface CanvasDataFull extends CanvasData {
 	data?: any;
 }
 
@@ -14,87 +16,160 @@ export interface OcrResponse {
 	text: string;
 }
 
+export interface TextToImageResponse {
+	image: string;
+}
+
+export interface ErrorResponse {
+	code: number;
+	message: string;
+	details?: any;
+}
+
+// Вспомогательная функция для обработки ответа
+const handleResponse = async (response: Response) => {
+	if (!response.ok) {
+		const errorData: ErrorResponse = await response.json().catch(() => ({
+			code: response.status,
+			message: response.statusText,
+		}));
+		console.error('API error:', errorData);
+		throw errorData;
+	}
+	return response.json();
+};
+
+// Методы API
 export const getAllCanvases = async ({
 	name = '',
 	created_at = '',
 }: { name?: string; created_at?: string } = {}): Promise<CanvasData[]> => {
-	const params: { name?: string; created_at?: string } = {};
-	if (name) params.name = name;
-	if (created_at) params.created_at = created_at;
+	const params = new URLSearchParams();
+	if (name) params.append('name', name.trim());
+	if (created_at) params.append('created_at', created_at);
 
+	const url = `${API_URL}/canvas?${params.toString()}`;
+	console.log('Requesting URL:', url);
+
+	const response = await fetch(url, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+	});
+
+	const data = await handleResponse(response);
+	console.log('API response:', data);
+	return data;
+};
+
+export const getCanvasById = async (id: string): Promise<CanvasDataFull> => {
+	const response = await fetch(`${API_URL}/canvas/${id}`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+	});
+
+	return handleResponse(response);
+};
+
+export const createCanvas = async (canvas_name: string): Promise<CanvasData> => {
+	const response = await fetch(`${API_URL}/canvas`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ canvas_name }),
+	});
+
+	return handleResponse(response);
+};
+
+export const updateCanvas = async (id: string, data: any): Promise<CanvasData> => {
 	try {
-		const response = await axios.get(`${API_URL}/get`, {
-			params,
-		});
-
-		console.log('Response data:', response.data);
-
-		if (response.data && Array.isArray(response.data.canvases)) {
-			return response.data.canvases;
+		// Проверяем, что data существует
+		if (!data) {
+			throw new Error('Data is missing');
 		}
 
-		console.warn('Ответ не содержит canvases или неверный формат:', response.data);
-		return [];
-	} catch (error) {
-		console.error('Ошибка при получении canvases:', error);
-		return [];
+		// Логируем тип данных
+		console.log('Data for update:', {
+			dataType: data instanceof Blob ? 'Blob' : typeof data,
+			...(data instanceof Blob ? { type: data.type, size: data.size } : {}),
+		});
+
+		const formData = new FormData();
+		formData.append('file', data);
+
+		// Логируем содержимое FormData
+		for (const [key, value] of formData.entries()) {
+			console.log('FormData entry:', {
+				key,
+				value: value instanceof Blob ? { type: value.type, size: value.size } : value,
+			});
+		}
+
+		console.log('Sending PUT request:', { url: `${API_URL}/canvas/${id}` });
+
+		const response = await fetch(`${API_URL}/canvas/${id}`, {
+			method: 'PUT',
+			body: formData,
+		});
+
+		return handleResponse(response);
+	} catch (error: any) {
+		console.error('Failed to update canvas:', error.message || error);
+		throw new Error('Failed to update canvas');
 	}
 };
 
-export const getCanvasById = async (id: string): Promise<CanvasData[]> => {
-	const response = await fetch(`${API_URL}/get?id=${id}`);
-	if (!response.ok) throw new Error(`Failed to fetch canvas ${id}`);
-	const canvasData = await response.json();
-	console.log(canvasData);
-	const jsonURL = canvasData.canvases[0].canvas_url;
-	const canvasObject = await fetch(jsonURL);
-	return await canvasObject.json();
-};
-
-// export const createCanvas = async (title: string): Promise<CanvasData> => {
-// 	const response = await fetch(`${API_URL}/add`, {
-// 		method: 'POST',
-// 		headers: { 'Content-Type': 'application/json' },
-// 		body: JSON.stringify({ title }),
-// 	});
-// 	if (!response.ok) throw new Error('Failed to create canvas');
-// 	return response.json();
-// };
-
-export const createCanvas = async (name: string): Promise<CanvasData> => {
-	const response = await axios.post(`${API_URL}/add?name=${name}`);
-	return response.data;
-};
-
-export const updateCanvas = async (id: string, data: any) => {
-	const formData = new FormData();
-	formData.append('image', data);
-
-	// const response = await axios.post(`${API_URL}/update?id=${id}`);
-	// return response.data;
-	const response = await fetch(`${API_URL}/update?id=${id}`, {
-		method: 'POST',
-		body: formData,
-	});
-
-	console.log({ response });
-	if (!response.ok) throw new Error('Failed to update canvas');
-};
-
-export const deleteCanvas = async (id: string): Promise<void> => {
-	const response = await fetch(`${API_URL}/canvases/${id}`, {
+export const deleteCanvas = async (id: number): Promise<void> => {
+	const response = await fetch(`${API_URL}/canvas/${id}`, {
 		method: 'DELETE',
+		headers: {
+			'Content-Type': 'application/json',
+		},
 	});
-	if (!response.ok) throw new Error('Failed to delete canvas');
+
+	if (!response.ok) {
+		const errorData: ErrorResponse = await response.json().catch(() => ({
+			code: response.status,
+			message: response.statusText,
+		}));
+		console.error('API error:', errorData);
+		throw errorData;
+	}
 };
 
-export const getOcr = async (data: Blob): Promise<OcrResponse> => {
+export const getOcr = async (image: File): Promise<OcrResponse> => {
 	const formData = new FormData();
-	formData.append('image', data);
-	const response = await fetch(`${API_URL}/getML`, {
+	formData.append('file', image);
+
+	// Логируем содержимое FormData
+	for (const [key, value] of formData.entries()) {
+		console.log('FormData entry:', {
+			key,
+			value: value instanceof Blob ? { type: value.type, size: value.size } : value,
+		});
+	}
+
+	const response = await fetch(`${API_URL}/ml/image-to-text`, {
 		method: 'POST',
 		body: formData,
 	});
-	if (!response.ok) throw new Error('Failed to process OCR');
-	return response.json();
+
+	return handleResponse(response);
+};
+
+export const textToImage = async (text: string): Promise<TextToImageResponse> => {
+	const response = await fetch(`${API_URL}/ml/text-to-image`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ text }),
+	});
+
+	return handleResponse(response);
 };

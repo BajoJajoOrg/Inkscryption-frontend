@@ -1,44 +1,99 @@
 import { useQuery } from '@tanstack/react-query';
 import { CanvasFilter, CanvasGrid, ProtectedLayout } from ':components';
-import { getAllCanvases, CanvasData } from ':services/api';
-import { useState } from 'react';
+import { getAllCanvases, CanvasData, ErrorResponse } from ':services/api';
+import { useState, useMemo, useCallback } from 'react';
+import dayjs from 'dayjs';
 
 const Home: React.FC = () => {
-	const [searchTitle, setSearchTitle] = useState('');
-	const [dateRange, setDateRange] = useState<[string | null, string | null]>([null, null]);
+	const [searchTitle, setSearchTitleState] = useState('');
+	const [dateRange, setDateRangeState] = useState<[string | null, string | null]>([null, null]);
 
-	// Форматируем дату в YYYYMMDD:YYYYMMDD
-	const formatDateForQuery = (date: string | null): string => {
+	const setSearchTitle = useCallback((value: string) => {
+		setSearchTitleState(value);
+	}, []);
+
+	const setDateRange = useCallback((range: [string | null, string | null]) => {
+		setDateRangeState(range);
+	}, []);
+
+	// Форматируем дату в YYYYMMDD
+	const formatDateForQuery = useCallback((date: string | null): string => {
 		if (!date) return '';
-		const d = new Date(date);
-		return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(
-			2,
-			'0'
-		)}`;
-	};
+		try {
+			const parsedDate = dayjs(date, 'DD.MM.YYYY');
+			if (!parsedDate.isValid()) {
+				console.warn('Невалидная дата:', date);
+				return '';
+			}
+			return parsedDate.format('YYYYMMDD');
+		} catch (error) {
+			console.error('Ошибка форматирования даты:', date, error);
+			return '';
+		}
+	}, []);
 
-	const createdAtQuery =
-		dateRange[0] || dateRange[1]
-			? `${formatDateForQuery(dateRange[0])}:${formatDateForQuery(dateRange[1])}`
-			: '';
+	// Формируем created_at
+	const createdAtQuery = useMemo(() => {
+		const start = formatDateForQuery(dateRange[0]);
+		const end = formatDateForQuery(dateRange[1]);
+		if (start && end) {
+			if (dayjs(start).isAfter(dayjs(end))) {
+				console.warn('Начальная дата позже конечной');
+				return '';
+			}
+			const query = `${start}:${end}`;
+			console.log('Сформирован created_at:', query);
+			return query;
+		}
+		return '';
+	}, [dateRange[0], dateRange[1], formatDateForQuery]);
 
-	const { data, isLoading, error } = useQuery<CanvasData[]>({
+	const { data, isLoading, error } = useQuery<CanvasData[], ErrorResponse>({
 		queryKey: ['canvases', searchTitle, createdAtQuery],
-		queryFn: () => getAllCanvases({ name: searchTitle, created_at: createdAtQuery }),
+		queryFn: () => {
+			console.log('Отправляем запрос с:', { name: searchTitle, created_at: createdAtQuery });
+			return getAllCanvases({ name: searchTitle, created_at: createdAtQuery });
+		},
+		staleTime: 10 * 60 * 1000, // 10 минут кэширования
 	});
 
-	if (isLoading) return <div>Загрузка...</div>;
-	if (error) return <div>Ошибка: {(error as Error).message}</div>;
+	// Мемоизируем canvases
+	const canvases = useMemo(() => data ?? [], [data]);
+
+	// Рендеринг ошибки
+	const renderError = useCallback(
+		(error: ErrorResponse) => (
+			<div>
+				Ошибка: {error.message}
+				{error.details && <div>Детали: {JSON.stringify(error.details)}</div>}
+			</div>
+		),
+		[]
+	);
+
+	console.log('Home рендерится');
 
 	return (
-		<ProtectedLayout canvases={data ? data : []}>
-			<CanvasFilter
-				searchTitle={searchTitle}
-				setSearchTitle={setSearchTitle}
-				dateRange={dateRange}
-				setDateRange={setDateRange}
-			/>
-			<CanvasGrid canvases={data ? data : []} />
+		<ProtectedLayout canvases={canvases}>
+			{isLoading ? (
+				<div>Загрузка...</div>
+			) : error ? (
+				renderError(error)
+			) : (
+				<>
+					<CanvasFilter
+						searchTitle={searchTitle}
+						setSearchTitle={setSearchTitle}
+						dateRange={dateRange}
+						setDateRange={setDateRange}
+					/>
+					{canvases.length === 0 ? (
+						<div>Нет канвасов, соответствующих фильтру</div>
+					) : (
+						<CanvasGrid canvases={canvases} />
+					)}
+				</>
+			)}
 		</ProtectedLayout>
 	);
 };

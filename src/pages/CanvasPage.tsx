@@ -9,7 +9,7 @@ const CanvasPage: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
 
 	const { data, isLoading, error } = useQuery<CanvasData[]>({
-		queryKey: ['canvases'],
+		queryKey: ['canvasesAll'],
 		queryFn: () => getAllCanvases({}),
 	});
 	if (isLoading) return <div>Загрузка...</div>;
