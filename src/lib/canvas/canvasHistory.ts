@@ -4,8 +4,12 @@ export function saveCanvasState(canvas: fabric.Canvas): string {
 	return JSON.stringify(canvas.toJSON());
 }
 
+export let saveHistoryExternal = () => {};
+export const setSaveHistoryExternal = (fn: () => void) => {
+	saveHistoryExternal = fn;
+};
+
 export function loadCanvasState(canvas: fabric.Canvas, json: string) {
-	console.log(json);
 	if (!json) {
 		return;
 	}

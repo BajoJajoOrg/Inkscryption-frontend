@@ -2,6 +2,8 @@
 import * as fabric from 'fabric';
 import { TCanvasMode } from './types';
 import AIIcon from '../../assets/svg/icons/ai.svg';
+import { textToImage } from ':services/api';
+import { saveHistoryExternal } from './canvasHistory';
 
 const AIImg = document.createElement('img');
 AIImg.src = AIIcon;
@@ -108,10 +110,82 @@ export const addConvertTextControl = (textbox: any) => {
 		offsetY: -16,
 		offsetX: 16,
 		cursorStyle: 'pointer',
-		mouseUpHandler: () => {
-			console.log(AIIcon);
+		mouseUpHandler: async () => {
+			const canvas = textbox.canvas;
+			const oldLeft = textbox.left;
+			const oldTop = textbox.top;
+			canvas.discardActiveObject();
+			canvas.remove(textbox);
+			canvas.selection = true;
+			canvas.skipTargetFind = false;
+			canvas.selectionFullyContained = false;
+
+			const json = await textToImage(textbox.text || '');
+
+			const { svg, width, height } = convertToSVG(json);
+			const loadedSVG = await fabric.loadSVGFromString(svg);
+
+			const tt = fabric.util.groupSVGElements(loadedSVG.objects, loadedSVG.options);
+
+			tt.set({
+				scaleY: 1,
+				scaleX: 1,
+				originX: 'center',
+				originY: 'center',
+				visible: true,
+				centeredScaling: true,
+				selectable: true,
+				fill: '#000000',
+			});
+
+			tt.setPositionByOrigin(new fabric.Point(oldLeft, oldTop), 'center', 'center');
+			canvas.add(tt);
+
+			canvas.renderAll();
+
+			canvas.requestRenderAll();
+			saveHistoryExternal();
 		},
 		render: renderIcon(AIImg),
 		cornerSize: 24,
 	});
 };
+
+function convertToSVG(json) {
+	const { paths, background } = json;
+
+	let maxX = 0;
+	let maxY = 0;
+
+	const dStrings = paths.map((pathArray) => {
+		return pathArray
+			.map((cmd) => {
+				// Пропускаем первую строку (буква команды)
+				const coords = cmd.slice(1);
+				for (let i = 0; i < coords.length; i += 2) {
+					const x = coords[i];
+					const y = coords[i + 1];
+					if (typeof x === 'number' && typeof y === 'number') {
+						if (x > maxX) maxX = x;
+						if (y > maxY) maxY = y;
+					}
+				}
+				return cmd.join(' ');
+			})
+			.join(' ');
+	});
+
+	console.log(maxX, maxY);
+
+	const width = 100;
+	const height = 100;
+
+	const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+	<rect width="100%" height="100%" fill="${'none'}" />
+	${dStrings.map((d) => `<path d="${d}" stroke="black" fill="none" />`).join('\n  ')}
+  </svg>
+	`.trim();
+
+	return { svg, width, height };
+}

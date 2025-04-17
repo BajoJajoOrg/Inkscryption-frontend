@@ -13,6 +13,7 @@ import {
 	registerPointerTracking,
 	applyCanvasMode,
 	initializeCanvas,
+	setSaveHistoryExternal,
 } from ':lib/canvas';
 import { useParams } from 'react-router-dom';
 import { getCanvasById, updateCanvas } from ':services/api';
@@ -71,8 +72,9 @@ export const FabricCanvas = () => {
 		applyCurrentMode();
 
 		getCanvasById(id || '0').then(async (res) => {
-			loadJSON(res);
-			setHistory([res]);
+			const jsonCanvas = JSON.parse(atob(res.data));
+			loadJSON(jsonCanvas);
+			setHistory([jsonCanvas]);
 		});
 	}, [applyCurrentMode, saveHistory, id, loadJSON]);
 
@@ -80,6 +82,10 @@ export const FabricCanvas = () => {
 		const cleanup = registerPointerTracking(isMouseDownRef);
 		if (fabricRef.current) saveHistory();
 		return cleanup;
+	}, [saveHistory]);
+
+	useEffect(() => {
+		setSaveHistoryExternal(saveHistory);
 	}, [saveHistory]);
 
 	useEffect(() => {

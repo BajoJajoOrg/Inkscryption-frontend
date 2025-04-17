@@ -87,11 +87,8 @@ const Home: React.FC = () => {
 						dateRange={dateRange}
 						setDateRange={setDateRange}
 					/>
-					{canvases.length === 0 ? (
-						<div>Нет канвасов, соответствующих фильтру</div>
-					) : (
-						<CanvasGrid canvases={canvases} />
-					)}
+
+					<CanvasGrid canvases={canvases} />
 				</>
 			)}
 		</ProtectedLayout>
