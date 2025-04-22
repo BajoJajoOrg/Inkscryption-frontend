@@ -245,3 +245,36 @@ function createSubpath(commands: any[], original: fabric.Path) {
 		strokeWidth: original.strokeWidth,
 	});
 }
+
+export const fromTextToObject = async (canvas, text, top, left) => {
+	canvas.discardActiveObject();
+	canvas.selection = true;
+	canvas.skipTargetFind = false;
+	canvas.selectionFullyContained = false;
+
+	const json = await textToImage(text || '');
+	console.log(JSON.stringify(json));
+
+	const pathObjects = convertToPaths(json);
+
+	pathObjects.forEach((path) => {
+		path.set({ left: left, top: top });
+		canvas.add(path);
+	});
+
+	const lastObject = canvas.getObjects().pop();
+
+	if (lastObject && lastObject.type === 'path') {
+		splitPathWhilePreservingPosition(lastObject as fabric.Path);
+	}
+
+	canvas.renderAll();
+
+	canvas.requestRenderAll();
+	saveHistoryExternal();
+};
+
+export let canvasRef;
+export const setCanvasRef = (ref) => {
+	canvasRef = ref;
+};

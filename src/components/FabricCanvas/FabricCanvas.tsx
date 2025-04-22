@@ -14,6 +14,7 @@ import {
 	applyCanvasMode,
 	initializeCanvas,
 	setSaveHistoryExternal,
+	setCanvasRef,
 } from ':lib/canvas';
 import { useParams } from 'react-router-dom';
 import { getCanvasById, updateCanvas } from ':services/api';
@@ -73,6 +74,8 @@ export const FabricCanvas = () => {
 
 		getCanvasById(id || '0').then(async (res) => {
 			try {
+				console.log(res.text);
+				localStorage.setItem('aitext', res.text);
 				const jsonCanvas = JSON.parse(atob(res.data));
 				loadJSON(jsonCanvas);
 				setHistory([jsonCanvas]);
@@ -91,6 +94,10 @@ export const FabricCanvas = () => {
 	useEffect(() => {
 		setSaveHistoryExternal(saveHistory);
 	}, [saveHistory]);
+
+	useEffect(() => {
+		setCanvasRef(fabricRef.current);
+	}, [fabricRef]);
 
 	useEffect(() => {
 		if (!containerRef.current || !fabricRef.current) return;
@@ -134,10 +141,11 @@ export const FabricCanvas = () => {
 	const handleGetText = useCallback(async () => {
 		const canvas = fabricRef.current;
 		if (!canvas) return;
-		localStorage.setItem('aitext', 'Loading...');
-		const extracted = await extractTextFromCanvas(canvas);
+		localStorage.setItem('aitext', 'Обработка...');
+		handleSaveCanvas();
+		const extracted = await extractTextFromCanvas(canvas, id || '0');
 		localStorage.setItem('aitext', extracted);
-	}, []);
+	}, [id, handleSaveCanvas]);
 
 	const toggleMode = (mode: TCanvasMode) => {
 		setMode(mode);

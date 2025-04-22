@@ -23,7 +23,11 @@ export const CanvasTextDrawer: React.FC = () => {
 		let interval: number;
 		if (open) {
 			interval = setInterval(() => {
-				setText(localStorage.getItem('aitext') || '');
+				setText(
+					localStorage.getItem('aitext') !== ''
+						? String(localStorage.getItem('aitext'))
+						: 'Ничего нет.'
+				);
 			}, 200) as unknown as number;
 		}
 		return () => {
@@ -69,9 +73,9 @@ export const CanvasTextDrawer: React.FC = () => {
 			<Button type="primary" onClick={showDrawer}>
 				Посмотреть текст
 			</Button>
-			<Drawer title="Detected text" onClose={onClose} open={open}>
+			<Drawer title="Извлеченный текст" onClose={onClose} open={open}>
 				<Input
-					placeholder="Search text"
+					placeholder="Поиск"
 					value={searchTerm}
 					onChange={(e) => setSearchTerm(e.target.value)}
 					style={{ marginBottom: 16 }}
@@ -82,16 +86,16 @@ export const CanvasTextDrawer: React.FC = () => {
 						disabled={highlightIndex === 0}
 						style={{ marginRight: 8 }}
 					>
-						Previous
+						Назад
 					</Button>
 					<Button
 						onClick={() => setHighlightIndex((prev) => Math.min(prev + 1, totalMatches - 1))}
 						disabled={totalMatches === 0 || highlightIndex >= totalMatches - 1}
 					>
-						Next
+						Вперед
 					</Button>
 					<span style={{ marginLeft: 8 }}>
-						{totalMatches > 0 ? `${highlightIndex + 1} of ${totalMatches}` : '0 matches'}
+						{totalMatches > 0 ? `${highlightIndex + 1} из ${totalMatches}` : '0 совпадений'}
 					</span>
 				</div>
 				<div className="text-container">{processedText}</div>
