@@ -72,9 +72,13 @@ export const FabricCanvas = () => {
 		applyCurrentMode();
 
 		getCanvasById(id || '0').then(async (res) => {
-			const jsonCanvas = JSON.parse(atob(res.data));
-			loadJSON(jsonCanvas);
-			setHistory([jsonCanvas]);
+			try {
+				const jsonCanvas = JSON.parse(atob(res.data));
+				loadJSON(jsonCanvas);
+				setHistory([jsonCanvas]);
+			} catch {
+				console.error('Не получилось загрузить канвас.');
+			}
 		});
 	}, [applyCurrentMode, saveHistory, id, loadJSON]);
 
@@ -132,7 +136,6 @@ export const FabricCanvas = () => {
 		if (!canvas) return;
 		localStorage.setItem('aitext', 'Loading...');
 		const extracted = await extractTextFromCanvas(canvas);
-		console.log(extracted);
 		localStorage.setItem('aitext', extracted);
 	}, []);
 

@@ -121,25 +121,20 @@ export const addConvertTextControl = (textbox: any) => {
 			canvas.selectionFullyContained = false;
 
 			const json = await textToImage(textbox.text || '');
+			console.log(JSON.stringify(json));
 
-			const { svg, width, height } = convertToSVG(json);
-			const loadedSVG = await fabric.loadSVGFromString(svg);
+			const pathObjects = convertToPaths(json);
 
-			const tt = fabric.util.groupSVGElements(loadedSVG.objects, loadedSVG.options);
-
-			tt.set({
-				scaleY: 1,
-				scaleX: 1,
-				originX: 'center',
-				originY: 'center',
-				visible: true,
-				centeredScaling: true,
-				selectable: true,
-				fill: '#000000',
+			pathObjects.forEach((path) => {
+				path.set({ left: oldLeft, top: oldTop });
+				canvas.add(path);
 			});
 
-			tt.setPositionByOrigin(new fabric.Point(oldLeft, oldTop), 'center', 'center');
-			canvas.add(tt);
+			const lastObject = canvas.getObjects().pop();
+
+			if (lastObject && lastObject.type === 'path') {
+				splitPathWhilePreservingPosition(lastObject as fabric.Path);
+			}
 
 			canvas.renderAll();
 
@@ -151,41 +146,102 @@ export const addConvertTextControl = (textbox: any) => {
 	});
 };
 
-function convertToSVG(json) {
-	const { paths, background } = json;
+function convertToPaths(json) {
+	const { paths } = json;
+	const fabricPaths = [];
 
-	let maxX = 0;
-	let maxY = 0;
+	for (const pathArray of paths) {
+		const d = pathArray.map((cmd) => cmd.join(' ')).join(' ');
+		const path = new fabric.Path(d, {
+			fill: null,
+			stroke: 'black',
+			selectable: true,
+			originX: 'center',
+			originY: 'center',
+			centeredScaling: true,
+		});
+		fabricPaths.push(path);
+	}
 
-	const dStrings = paths.map((pathArray) => {
-		return pathArray
-			.map((cmd) => {
-				// Пропускаем первую строку (буква команды)
-				const coords = cmd.slice(1);
-				for (let i = 0; i < coords.length; i += 2) {
-					const x = coords[i];
-					const y = coords[i + 1];
-					if (typeof x === 'number' && typeof y === 'number') {
-						if (x > maxX) maxX = x;
-						if (y > maxY) maxY = y;
-					}
-				}
-				return cmd.join(' ');
-			})
-			.join(' ');
+	return fabricPaths;
+}
+
+function splitPathWhilePreservingPosition(originalPath: fabric.Path) {
+	const canvas = originalPath.canvas;
+	if (!canvas) return;
+
+	const originalTransform = {
+		matrix: originalPath.calcTransformMatrix(),
+		left: originalPath.left,
+		top: originalPath.top,
+		scaleX: originalPath.scaleX,
+		scaleY: originalPath.scaleY,
+		angle: originalPath.angle,
+		originX: originalPath.originX,
+		originY: originalPath.originY,
+	};
+
+	const subpaths = splitIntoSubpaths(originalPath);
+
+	canvas.remove(originalPath);
+
+	subpaths.forEach((subpath) => {
+		const relativeCenter = getRelativeSubpathCenter(subpath, originalPath);
+
+		const absolutePosition = fabric.util.transformPoint(relativeCenter, originalTransform.matrix);
+
+		subpath.set({
+			left: absolutePosition.x,
+			top: absolutePosition.y,
+			originX: 'center',
+			originY: 'center',
+			scaleX: 1,
+			scaleY: 1,
+			angle: 0,
+			flipX: false,
+			flipY: false,
+		});
+
+		canvas.add(subpath);
 	});
 
-	console.log(maxX, maxY);
+	canvas.requestRenderAll();
+	saveHistoryExternal();
+}
 
-	const width = 100;
-	const height = 100;
+function getRelativeSubpathCenter(subpath: fabric.Path, original: fabric.Path) {
+	const subpathBounds = subpath.getBoundingRect();
 
-	const svg = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-	<rect width="100%" height="100%" fill="${'none'}" />
-	${dStrings.map((d) => `<path d="${d}" stroke="black" fill="none" />`).join('\n  ')}
-  </svg>
-	`.trim();
+	return new fabric.Point(
+		subpathBounds.left + subpathBounds.width / 2 - original.width / 2,
+		subpathBounds.top + subpathBounds.height / 2 - original.height / 2
+	);
+}
 
-	return { svg, width, height };
+function splitIntoSubpaths(originalPath: fabric.Path) {
+	const subpaths: fabric.Path[] = [];
+	let currentSubpath: any[] = [];
+	const pathData = originalPath.path;
+
+	pathData.forEach((command, index) => {
+		if (command[0] === 'M' && index !== 0) {
+			subpaths.push(createSubpath(currentSubpath, originalPath));
+			currentSubpath = [];
+		}
+		currentSubpath.push(command);
+	});
+
+	if (currentSubpath.length > 0) {
+		subpaths.push(createSubpath(currentSubpath, originalPath));
+	}
+
+	return subpaths;
+}
+
+function createSubpath(commands: any[], original: fabric.Path) {
+	return new fabric.Path(commands, {
+		fill: original.fill,
+		stroke: original.stroke,
+		strokeWidth: original.strokeWidth,
+	});
 }
