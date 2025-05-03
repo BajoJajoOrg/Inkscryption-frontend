@@ -37,18 +37,6 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = memo(({ children, canvas
 	return (
 		<Layout className={styles.root}>
 			<Content style={{ padding: '0 50px' }}>
-				<Breadcrumb
-					style={{ margin: '16px 0' }}
-					items={getBreadcrumbItems}
-					itemRender={(route, _, routes) => {
-						const last = routes.indexOf(route) === routes.length - 1;
-						return last ? (
-							<span>{route.title}</span>
-						) : (
-							<a onClick={route.onClick}>{route.title}</a>
-						);
-					}}
-				/>
 				{children}
 			</Content>
 		</Layout>

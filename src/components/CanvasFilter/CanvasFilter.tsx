@@ -17,10 +17,8 @@ const CanvasFilter: React.FC<CanvasFilterProps> = memo(
 	({ searchTitle, setSearchTitle, dateRange, setDateRange }) => {
 		const [inputValue, setInputValue] = useState(searchTitle);
 
-		// Дебounced обновление searchTitle
 		const debouncedSetSearchTitle = useCallback(
 			debounce((value: string) => {
-				console.log('Обновляем searchTitle:', value);
 				setSearchTitle(value);
 			}, 300),
 			[setSearchTitle]
@@ -36,14 +34,11 @@ const CanvasFilter: React.FC<CanvasFilterProps> = memo(
 		);
 
 		const handleDateChange = useCallback(
-			(dates: any, dateStrings: [string, string]) => {
-				console.log('Выбраны даты:', dateStrings);
+			(dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null, dateStrings: [string, string]) => {
 				setDateRange(dateStrings as [string | null, string | null]);
 			},
 			[setDateRange]
 		);
-
-		console.log('CanvasFilter рендерится, inputValue:', inputValue);
 
 		return (
 			<div className={styles.searchContainer}>

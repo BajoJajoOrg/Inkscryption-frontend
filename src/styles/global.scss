@@ -1,5 +1,4 @@
 :root {
-	font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
 	line-height: 1.5;
 	font-weight: 400;
 	width: 100%;
@@ -14,7 +13,18 @@
 	width: 100%;
 }
 
-body {
-	margin: 0;
-	overflow: hidden;
+body, .ant-layout {
+    font-family: "Postironic-Hill" !important;
+    font-weight: 400;
+    margin: 0;
+    overflow: hidden;
+}
+
+// fonts
+@font-face {
+    font-family: 'Postironic-Hill';
+    src: url('../assets/fonts/PostironicHillSilentHill1Font.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
 }
