@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { JSX, useState } from 'react';
 import { Button, Drawer, Upload, UploadProps } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
-import { getOcr } from ':services/api';
+import { getOcr } from ':api/api';
 import { useParams } from 'react-router-dom';
 import { canvasRef, fromTextToObject } from ':lib';
 
-interface FileUploadDrawerProps {
-	onFileUpload?: (file: File) => void;
-}
+// interface FileUploadDrawerProps {
+// 	onFileUpload?: (file: File) => void;
+// }
 
-export const CanvasUploadDrawer: React.FC<FileUploadDrawerProps> = () => {
+export const CanvasUploadDrawer = (): [JSX.Element, () => void] => {
 	const [open, setOpen] = useState(false);
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [processing, setProcessing] = useState(false);
@@ -22,7 +22,7 @@ export const CanvasUploadDrawer: React.FC<FileUploadDrawerProps> = () => {
 		},
 		multiple: false,
 		showUploadList: false,
-		accept: '.png',
+		accept: '.png, .jpg, .jpeg',
 	};
 
 	const processImage = async (file: File): Promise<File> => {
@@ -83,52 +83,51 @@ export const CanvasUploadDrawer: React.FC<FileUploadDrawerProps> = () => {
 		}
 	};
 
-	return (
-		<>
-			<Button type="primary" onClick={() => setOpen(true)}>
-				Загрузить изображение
-			</Button>
+	const showDrawer = () => {
+		setOpen(true);
+	};
 
-			<Drawer
-				title="Загрузка изображения"
-				onClose={() => {
-					setOpen(false);
-					setSelectedFile(null);
-				}}
-				open={open}
-			>
-				<div style={{ padding: 20 }}>
-					<Upload {...uploadProps}>
-						<Button icon={<UploadOutlined />} size="large">
-							Выбрать файл
-						</Button>
-					</Upload>
-
-					{selectedFile && (
-						<div style={{ margin: '16px 0' }}>
-							<p>Выбранный файл: {selectedFile.name}</p>
-							<p style={{ fontSize: 12, color: '#666' }}>
-								Изображение будет автоматически преобразовано в чёрно-белое с максимальной
-								контрастностью
-							</p>
-						</div>
-					)}
-
-					<Button
-						type="primary"
-						onClick={handleUpload}
-						disabled={!selectedFile || processing}
-						loading={processing}
-						style={{ marginTop: 16 }}
-					>
-						{processing ? 'Обработка...' : 'Загрузить файл'}
+	return [
+		<Drawer
+			title="Загрузка изображения"
+			onClose={() => {
+				setOpen(false);
+				setSelectedFile(null);
+			}}
+			open={open}
+		>
+			<div style={{ padding: 20 }}>
+				<Upload {...uploadProps}>
+					<Button icon={<UploadOutlined />} size="large">
+						Выбрать файл
 					</Button>
+				</Upload>
 
-					<p style={{ marginTop: 16, color: '#666' }}>
-						Поддерживается: PNG (изображение будет преобразовано автоматически)
-					</p>
-				</div>
-			</Drawer>
-		</>
-	);
+				{selectedFile && (
+					<div style={{ margin: '16px 0' }}>
+						<p>Выбранный файл: {selectedFile.name}</p>
+						<p style={{ fontSize: 12, color: '#666' }}>
+							Изображение будет автоматически преобразовано в чёрно-белое с максимальной
+							контрастностью
+						</p>
+					</div>
+				)}
+
+				<Button
+					type="primary"
+					onClick={handleUpload}
+					disabled={!selectedFile || processing}
+					loading={processing}
+					style={{ marginTop: 16 }}
+				>
+					{processing ? 'Обработка...' : 'Загрузить файл'}
+				</Button>
+
+				<p style={{ marginTop: 16, color: '#666' }}>
+					Поддерживается: PNG (изображение будет преобразовано автоматически)
+				</p>
+			</div>
+		</Drawer>,
+		showDrawer,
+	];
 };

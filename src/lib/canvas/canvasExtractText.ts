@@ -7,3 +7,8 @@ export async function extractTextFromCanvas(canvas: fabric.Canvas, id: string): 
 	const response = await getOcr(blob, id);
 	return response.text;
 }
+
+export let extractTextExternal = async () => {};
+export const setExtractTextExternal = (fn: () => Promise<void>) => {
+	extractTextExternal = fn;
+};

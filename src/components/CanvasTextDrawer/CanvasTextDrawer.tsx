@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { JSX, useEffect, useState } from 'react';
 import { Button, Drawer, Input } from 'antd';
+import { extractTextExternal } from ':lib';
 
 function escapeRegExp(string: string) {
 	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-export const CanvasTextDrawer: React.FC = () => {
+export const CanvasTextDrawer = (): [JSX.Element, () => void] => {
 	const [open, setOpen] = useState(false);
 	const [text, setText] = useState('');
 	const [searchTerm, setSearchTerm] = useState('');
@@ -68,38 +69,35 @@ export const CanvasTextDrawer: React.FC = () => {
 		});
 	}
 
-	return (
-		<>
-			<Button type="primary" onClick={showDrawer}>
-				Посмотреть текст
-			</Button>
-			<Drawer title="Извлеченный текст" onClose={onClose} open={open}>
-				<Input
-					placeholder="Поиск"
-					value={searchTerm}
-					onChange={(e) => setSearchTerm(e.target.value)}
-					style={{ marginBottom: 16 }}
-				/>
-				<div style={{ marginBottom: 16 }}>
-					<Button
-						onClick={() => setHighlightIndex((prev) => Math.max(prev - 1, 0))}
-						disabled={highlightIndex === 0}
-						style={{ marginRight: 8 }}
-					>
-						Назад
-					</Button>
-					<Button
-						onClick={() => setHighlightIndex((prev) => Math.min(prev + 1, totalMatches - 1))}
-						disabled={totalMatches === 0 || highlightIndex >= totalMatches - 1}
-					>
-						Вперед
-					</Button>
-					<span style={{ marginLeft: 8 }}>
-						{totalMatches > 0 ? `${highlightIndex + 1} из ${totalMatches}` : '0 совпадений'}
-					</span>
-				</div>
-				<div className="text-container">{processedText}</div>
-			</Drawer>
-		</>
-	);
+	return [
+		<Drawer title="Извлеченный текст" onClose={onClose} open={open}>
+			<Button onClick={() => extractTextExternal()}>Извлечь текст</Button>
+			<Input
+				placeholder="Поиск"
+				value={searchTerm}
+				onChange={(e) => setSearchTerm(e.target.value)}
+				style={{ marginBottom: 16, marginTop: 16 }}
+			/>
+			<div style={{ marginBottom: 16 }}>
+				<Button
+					onClick={() => setHighlightIndex((prev) => Math.max(prev - 1, 0))}
+					disabled={highlightIndex === 0}
+					style={{ marginRight: 8 }}
+				>
+					Назад
+				</Button>
+				<Button
+					onClick={() => setHighlightIndex((prev) => Math.min(prev + 1, totalMatches - 1))}
+					disabled={totalMatches === 0 || highlightIndex >= totalMatches - 1}
+				>
+					Вперед
+				</Button>
+				<span style={{ marginLeft: 8 }}>
+					{totalMatches > 0 ? `${highlightIndex + 1} из ${totalMatches}` : '0 совпадений'}
+				</span>
+			</div>
+			<div className="text-container">{processedText}</div>
+		</Drawer>,
+		showDrawer,
+	];
 };

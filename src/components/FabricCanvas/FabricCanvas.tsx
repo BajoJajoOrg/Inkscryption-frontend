@@ -16,9 +16,12 @@ import {
 	setSaveHistoryExternal,
 	setCanvasRef,
 	setSaveCanvasExternal,
+	setExtractTextExternal,
 } from ':lib/canvas';
 import { useParams } from 'react-router-dom';
 import { getCanvasById, updateCanvas } from ':api/api';
+import { CanvasUploadDrawer } from ':components/CanvasUploadDrawer/CanvasUploadDrawer';
+import { CanvasTextDrawer } from ':components/CanvasTextDrawer/CanvasTextDrawer';
 
 export const FabricCanvas = () => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -157,6 +160,13 @@ export const FabricCanvas = () => {
 		setSaveCanvasExternal(handleSaveCanvas);
 	}, [handleSaveCanvas]);
 
+	useEffect(() => {
+		setExtractTextExternal(handleGetText);
+	}, [handleGetText]);
+
+	const [UploadDrawer, showUD] = CanvasUploadDrawer();
+	const [TextDrawer, showTD] = CanvasTextDrawer();
+
 	return (
 		<div>
 			<Toolbar
@@ -182,9 +192,11 @@ export const FabricCanvas = () => {
 				}}
 				onUndo={handleUndo}
 				onRedo={handleRedo}
-				onSave={handleSaveCanvas}
-				onExtractText={handleGetText}
+				onShowFileDrawer={showUD}
+				onShowAIDrawer={showTD}
 			/>
+			{UploadDrawer}
+			{TextDrawer}
 			<div ref={containerRef} className={styles.canvasWrap}>
 				<canvas ref={canvasRef} />
 			</div>

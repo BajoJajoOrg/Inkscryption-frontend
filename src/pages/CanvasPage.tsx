@@ -47,7 +47,7 @@ const CanvasPage: React.FC = () => {
 					duration: 2,
 				});
 			}
-		}, 30000);
+		}, 60000);
 
 		return () => clearInterval(intervalId);
 	}, [data, id, messageApi]);

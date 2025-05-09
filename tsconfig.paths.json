@@ -23,6 +23,8 @@
 			":images/*": ["src/assets/images/*"],
 			":svg/*": ["src/assets/svg/*"],
 			":svg": ["src/assets/svg"],
+			":gif/*": ["src/assets/gif/*"],
+			":gif": ["src/assets/gif"],
 			":utils": ["src/utils"],
 			":utils/*": ["src/utils/*"],
 			":modules": ["src/modules"],
