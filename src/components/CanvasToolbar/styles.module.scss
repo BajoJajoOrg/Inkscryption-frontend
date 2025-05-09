@@ -9,7 +9,6 @@
 	box-sizing: border-box;
 	align-items: center;
 	justify-content: center;
-	background-color: rgb(255, 255, 255);
 	border-radius: min(2dvh, 2dvw);
 	padding: min(2dvw, 2dvh);
 
@@ -18,19 +17,36 @@
 }
 
 .toolbar__button:hover {
-	background-color: antiquewhite;
+	background-color: rgba(0, 0, 0, 0.85);
 }
 
 .selected {
-	background-color: antiquewhite;
+	background-color: rgba(0, 0, 0, 0.85);
 }
 
-.toolbar__content {
+.toolbarContent {
 	display: flex;
 	flex-direction: row;
 	gap: min(2dvw, 2dvh);
 	box-sizing: border-box;
 	width: fit-content;
+	background-color: rgba(0, 0, 0, 0.85);
+	padding: 10px 20px;
+	border-radius: min(1dvw, 1dvw);
+
+	box-shadow: 2.68px 2.68px 6.71px 0px #ffffff inset;
+
+	backdrop-filter: blur(5.36812686920166px);
+}
+
+.toolbarContentWrap {
+	border-radius: min(1dvw, 1dvw);
+	box-shadow: 3.36px 3.36px 8.72px 0px #00000099;
+}
+
+.toolbarContentBorder {
+	border-radius: min(1dvw, 1dvw);
+	box-shadow: -2.68px -2.68px 6.71px 0px #00000080 inset;
 }
 
 .toolbar {
@@ -39,4 +55,8 @@
 	justify-items: center;
 
 	width: 100%;
+	position: absolute;
+	left: 0;
+	padding-left: 20%;
+	padding-right: 15%;
 }

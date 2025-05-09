@@ -1,1 +1,13 @@
-<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <rect width="48" height="48" fill="white" fill-opacity="0.01"></rect> <path d="M18 10L24 4M24 4L30 10M24 4V24M24 24V44M24 24H44M24 24H4M18 38L24 44M24 44L30 38M38 18L44 24M44 24L38 30M10 18L4 24M4 24L10 30" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+<svg width="45" height="45" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M22.5 0.5C34.6439 0.5 44.5 10.3561 44.5 22.5C44.5 34.6439 34.6439 44.5 22.5 44.5C10.3561 44.5 0.5 34.6439 0.5 22.5C0.5 10.3561 10.3561 0.5 22.5 0.5ZM17.7646 12.6172C14.7056 11.6725 11.8536 14.4161 12.5596 17.4873L12.6387 17.7852L12.6396 17.7881L17.0273 31.918C18.2047 35.7302 23.5862 35.8142 24.8428 31.9941L24.8418 31.9932L26.1465 28.1035C26.4374 27.2309 27.0849 26.5475 27.9316 26.21L28.1035 26.1465L31.9961 24.8418L31.9951 24.8408C35.6716 23.6228 35.7301 18.5389 32.2666 17.1299L31.9209 17.0059L31.918 17.0049L17.7656 12.6172H17.7646Z" fill="white" fill-opacity="0.2" stroke="url(#paint0_linear_434_10)"/>
+<defs>
+<linearGradient id="paint0_linear_434_10" x1="-3.98816" y1="56.3558" x2="49.9542" y2="79.9117" gradientUnits="userSpaceOnUse">
+<stop stop-color="white" stop-opacity="0.53"/>
+<stop offset="0.0752237" stop-color="white" stop-opacity="0.62"/>
+<stop offset="0.25231" stop-color="white" stop-opacity="0.82"/>
+<stop offset="0.424188" stop-color="white" stop-opacity="0.49"/>
+<stop offset="0.700235" stop-color="white" stop-opacity="0.8"/>
+<stop offset="0.965865" stop-color="white" stop-opacity="0.74"/>
+</linearGradient>
+</defs>
+</svg>

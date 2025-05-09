@@ -35,8 +35,10 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = memo(({ children, canvas
 	console.log('ProtectedLayout рендерится');
 
 	return (
-		<Layout className={styles.root}>
-			<Content style={{ padding: '0 50px' }}>
+		<Layout className={location.pathname.startsWith('/canvas/') ? styles.canvasRoot : styles.root}>
+			<Content
+				style={location.pathname.startsWith('/canvas/') ? { padding: 0 } : { padding: '0 50px' }}
+			>
 				{children}
 			</Content>
 		</Layout>

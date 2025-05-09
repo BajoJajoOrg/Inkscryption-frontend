@@ -1,7 +1,7 @@
 // components/FabricCanvas.tsx
 import { useRef, useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import * as fabric from 'fabric';
-import styles from './FabricCanvas.module.scss';
+import styles from './styles.module.scss';
 
 import { Toolbar } from '../CanvasToolbar/CanvasToolbar';
 import {
@@ -14,6 +14,7 @@ import {
 	applyCanvasMode,
 	initializeCanvas,
 	setSaveHistoryExternal,
+	setSaveCanvasExternal,
 } from ':lib/canvas';
 import { useParams } from 'react-router-dom';
 import { getCanvasById, updateCanvas } from ':api/api';
@@ -124,7 +125,7 @@ export const FabricCanvas = () => {
 	const handleSaveCanvas = useCallback(async () => {
 		const saveData = history[history.length - 1];
 		const blob = JSONtoBlob(saveData);
-		updateCanvas(id || '0', blob);
+		await updateCanvas(id || '0', blob);
 	}, [history, id]);
 
 	const handleGetText = useCallback(async () => {
@@ -140,6 +141,10 @@ export const FabricCanvas = () => {
 		setMode(mode);
 		modeRef.current = mode;
 	};
+
+	useEffect(() => {
+		setSaveCanvasExternal(handleSaveCanvas);
+	}, [handleSaveCanvas]);
 
 	return (
 		<div>

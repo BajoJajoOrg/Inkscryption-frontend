@@ -9,6 +9,11 @@ export const setSaveHistoryExternal = (fn: () => void) => {
 	saveHistoryExternal = fn;
 };
 
+export let saveCanvasExternal = async () => {};
+export const setSaveCanvasExternal = (fn: () => Promise<void>) => {
+	saveCanvasExternal = fn;
+};
+
 export function loadCanvasState(canvas: fabric.Canvas, json: string) {
 	if (!json) {
 		return;
