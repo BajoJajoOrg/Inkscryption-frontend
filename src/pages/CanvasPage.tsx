@@ -52,6 +52,14 @@ const CanvasPage: React.FC = () => {
 		return () => clearInterval(intervalId);
 	}, [data, id, messageApi]);
 
+	useEffect(() => {
+		const handleLeave = async () => {
+			await saveCanvasExternal();
+		};
+		window.addEventListener('beforeunload', handleLeave);
+		return () => window.removeEventListener('beforeunload', handleLeave);
+	}, []);
+
 	if (isLoading) return <div>Загрузка...</div>;
 	if (error) return <div>Ошибка: {(error as Error).message}</div>;
 	const canvas = data && data.find((c) => id && c.id === +id);
