@@ -29,17 +29,17 @@ const AppRoutes: React.FC = () => {
 			<Route
 				path="/"
 				element={
-					// <PrivateRoute>
-					<Home />
-					// </PrivateRoute>
+					<PrivateRoute>
+						<Home />
+					</PrivateRoute>
 				}
 			/>
 			<Route
 				path="/canvas/:id"
 				element={
-					// <PrivateRoute>
-					<CanvasPage />
-					// </PrivateRoute>
+					<PrivateRoute>
+						<CanvasPage />
+					</PrivateRoute>
 				}
 			/>
 			<Route

@@ -1,4 +1,4 @@
-import { API_URL, CanvasData, ErrorResponse } from ':api';
+import { API_URL, ErrorResponse, handleResponse, fetchWithAuth, CanvasData } from ':api';
 
 export interface DirectoryData {
 	id: number;
@@ -26,86 +26,46 @@ export const getDirectoryContent = async (params: {
 	name?: string;
 	created_at?: string;
 }): Promise<DirectoryContent> => {
-	try {
-		const query = new URLSearchParams();
-		if (params.name) query.append('name', params.name);
-		if (params.created_at) query.append('created_at', params.created_at);
+	const query = new URLSearchParams();
+	if (params.name) query.append('name', params.name);
+	if (params.created_at) query.append('created_at', params.created_at);
 
-		const url = params.directoryId
-			? `${API_URL}/folder/${params.directoryId}?${query.toString()}`
-			: `${API_URL}/folder/0?${query.toString()}`;
+	const url = params.directoryId
+		? `${API_URL}/folder/${params.directoryId}?${query.toString()}`
+		: `${API_URL}/folder/0?${query.toString()}`;
 
-		const response = await fetch(url, {
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/json',
-				// 'Authorization': `Bearer ${token}`,
-			},
-		});
+	const response = await fetchWithAuth(url, {
+		method: 'GET',
+	});
 
-		if (!response.ok) {
-			const errorData = await response.json();
-			throw new Error(errorData.message || 'Failed to fetch directory content');
-		}
-
-		return await response.json();
-	} catch (error) {
-		throw {
-			message: error instanceof Error ? error.message : 'Unknown error',
-			details: error,
-		} as ErrorResponse;
-	}
+	return handleResponse(response);
 };
 
 // Создание директории
 export const createDirectory = async (name: string, parentId?: number): Promise<DirectoryData> => {
-	try {
-		const response = await fetch('/api/folder', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				// 'Authorization': `Bearer ${token}`,
-			},
-			body: JSON.stringify({
-				name,
-				parent: parentId || null,
-			}),
-		});
+	const response = await fetchWithAuth(`${API_URL}/folder`, {
+		method: 'POST',
+		body: JSON.stringify({
+			name,
+			parent_folder_id: parentId || null,
+		}),
+	});
 
-		if (!response.ok) {
-			const errorData = await response.json();
-			throw new Error(errorData.message || 'Failed to create directory');
-		}
-
-		return await response.json();
-	} catch (error) {
-		throw {
-			message: error instanceof Error ? error.message : 'Unknown error',
-			details: error,
-		} as ErrorResponse;
-	}
+	return handleResponse(response);
 };
 
 // Удаление директории
 export const deleteDirectory = async (directoryId: number): Promise<void> => {
-	try {
-		const response = await fetch(`/api/folder/${directoryId}`, {
-			method: 'DELETE',
-			headers: {
-				'Content-Type': 'application/json',
-				// Добавьте заголовок авторизации, если требуется
-				// 'Authorization': `Bearer ${token}`,
-			},
-		});
+	const response = await fetchWithAuth(`${API_URL}/folder/${directoryId}`, {
+		method: 'DELETE',
+	});
 
-		if (!response.ok) {
-			const errorData = await response.json();
-			throw new Error(errorData.message || 'Failed to delete directory');
-		}
-	} catch (error) {
-		throw {
-			message: error instanceof Error ? error.message : 'Unknown error',
-			details: error,
-		} as ErrorResponse;
+	if (!response.ok) {
+		const errorData: ErrorResponse = await response.json().catch(() => ({
+			code: response.status,
+			message: response.statusText,
+		}));
+		console.error('API error:', errorData);
+		throw errorData;
 	}
 };
