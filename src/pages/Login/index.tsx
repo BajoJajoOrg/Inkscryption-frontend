@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { ErrorResponse, login } from ':api';
+import { ErrorResponse } from ':api';
 import { useAuthStore } from ':store';
 import { Form, Input, Button, Alert, Typography, Layout } from 'antd';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
@@ -12,26 +12,33 @@ const { Content } = Layout;
 const LoginPage: React.FC = () => {
 	const navigate = useNavigate();
 	const setAuth = useAuthStore((state) => state.setAuth);
-	const mutation = useMutation({
-		mutationFn: login,
-		onSuccess: (data) => {
-			setAuth(data.access_token, data.refresh_token);
-			navigate('/dashboard');
-		},
-		onError: (error: ErrorResponse) => {
-			console.error('Ошибка входа:', error.message);
-		},
-	});
+	// const mutation = useMutation({
+	// 	mutationFn: login,
+	// 	onSuccess: (data) => {
+	// 		setAuth(data.access_token, data.refresh_token);
+	// 		navigate('/');
+	// 	},
+	// 	onError: (error: ErrorResponse) => {
+	// 		console.error('Ошибка входа:', error.message);
+	// 	},
+	// });
+
+	const handleLogin = () => {
+		// Имитация входа (без реального API)
+		console.log('Вход выполнен (фиктивный пользователь)');
+		navigate('/');
+	  };
 
 	return (
 		<Layout
 			style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
 		>
 			<div className={styles.root}>
-                <span className={styles.header}>
-                    Войти
-                </span>
-				<Form
+				<span className={styles.header}>Войти</span>
+				<Button type="primary" size="large" block onClick={handleLogin}>
+					Войти (тестовый режим)
+				</Button>
+				{/* <Form
 					className={styles.form}
                     name="login"
 					initialValues={{ remember: true }}
@@ -68,7 +75,7 @@ const LoginPage: React.FC = () => {
 							showIcon
 						/>
 					)}
-				</Form>
+				</Form> */}
 			</div>
 		</Layout>
 	);
