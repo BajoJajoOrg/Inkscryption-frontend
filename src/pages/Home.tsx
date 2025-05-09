@@ -1,11 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { CanvasFilter, CanvasGrid, ProtectedLayout } from ':components';
-import { ErrorResponse } from ':api/api';
+import { CanvasData, ErrorResponse, BreadcrumbItem, DirectoryData, getDirectoryContent } from ':api';
 import { useState, useMemo, useCallback } from 'react';
 import dayjs from 'dayjs';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Breadcrumb } from 'antd';
-import { DirectoryContent, getDirectoryContent } from ':components/CanvasGrid/mock';
+
+interface DirectoryContent {
+	folder: DirectoryData;
+	breadcrumbs: BreadcrumbItem[];
+	canvases: CanvasData[];
+	folders: DirectoryData[];
+}
 
 const Home: React.FC = () => {
 	const { directoryId } = useParams<{ directoryId?: string }>();
@@ -46,8 +52,10 @@ const Home: React.FC = () => {
 
 	const content = useMemo(
 		() => ({
+			folder: data?.folder,
+			breadcrumbs: data?.breadcrumbs ?? [],
 			canvases: data?.canvases ?? [],
-			directories: data?.directories ?? [],
+			directories: data?.folders ?? [],
 		}),
 		[data]
 	);
@@ -62,26 +70,29 @@ const Home: React.FC = () => {
 		[]
 	);
 
-	const location = useLocation();
 	const navigate = useNavigate();
 
 	const getBreadcrumbItems = useMemo(() => {
 		const items = [{ title: 'Главная', href: '/', onClick: () => navigate('/') }];
 
-		if (directoryId && content.directories.length > 0) {
-			const currentDir = content.directories.find((d) => d.id === +directoryId);
-			items.push({
-				title: currentDir ? currentDir.directory_name : `Директория ${directoryId}`,
-				href: `/directory/${directoryId}`,
-				onClick: () => navigate(`/directory/${directoryId}`),
-			});
+		if (content.breadcrumbs.length > 0) {
+			content.breadcrumbs
+				.slice()
+				.reverse()
+				.forEach((breadcrumb) => {
+					items.push({
+						title: breadcrumb.name,
+						href: `/directory/${breadcrumb.id}`,
+						onClick: () => navigate(`/directory/${breadcrumb.id}`),
+					});
+				});
 		}
 
 		return items;
-	}, [location.pathname, content.directories, directoryId, navigate]);
+	}, [content.breadcrumbs, navigate]);
 
 	return (
-		<ProtectedLayout canvases={content.canvases}>
+		<ProtectedLayout>
 			<Breadcrumb
 				style={{ margin: '16px 0' }}
 				items={getBreadcrumbItems}
@@ -93,17 +104,20 @@ const Home: React.FC = () => {
 			{isLoading ? (
 				<div>Загрузка...</div>
 			) : error ? (
-				renderError(error)
+				<div>Не удалось загрузить папку</div>
 			) : (
 				<div>
-					<h1>{directoryId ? 'Директория' : 'Мои файлы'}</h1>
+					<h1>{content.folder ? content.folder.name : 'Мои файлы'}</h1>
 					<CanvasFilter
 						searchTitle={searchTitle}
 						setSearchTitle={setSearchTitle}
 						dateRange={dateRange}
 						setDateRange={setDateRange}
 					/>
-					<CanvasGrid content={content} directoryId={directoryId ? +directoryId : undefined} />
+					<CanvasGrid
+						content={{ canvases: content.canvases, directories: content.directories }}
+						directoryId={directoryId ? +directoryId : undefined}
+					/>
 				</div>
 			)}
 		</ProtectedLayout>
