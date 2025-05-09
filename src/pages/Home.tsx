@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { CanvasFilter, CanvasGrid, ProtectedLayout } from ':components';
-import { ErrorResponse } from ':services/api';
+import { ErrorResponse } from ':api/api';
 import { useState, useMemo, useCallback } from 'react';
 import dayjs from 'dayjs';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';

@@ -2,7 +2,7 @@ import { ProtectedLayout } from ':components';
 import { FabricCanvas } from '../components/FabricCanvas/FabricCanvas';
 import { useParams } from 'react-router-dom';
 import { CanvasTextDrawer } from ':components/CanvasTextDrawer/CanvasTextDrawer';
-import { CanvasData, getAllCanvases } from ':services/api';
+import { CanvasData, getAllCanvases } from ':api/api';
 import { useQuery } from '@tanstack/react-query';
 
 const CanvasPage: React.FC = () => {

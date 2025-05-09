@@ -1,5 +1,5 @@
 import * as fabric from "fabric";
-import { getOcr } from "../../services/api";
+import { getOcr } from "../../api/api";
 
 export async function extractTextFromCanvas(
   canvas: fabric.Canvas

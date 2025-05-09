@@ -16,7 +16,7 @@ import {
 	setSaveHistoryExternal,
 } from ':lib/canvas';
 import { useParams } from 'react-router-dom';
-import { getCanvasById, updateCanvas } from ':services/api';
+import { getCanvasById, updateCanvas } from ':api/api';
 
 export const FabricCanvas = () => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);

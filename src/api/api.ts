@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL as string;
+export const API_URL = import.meta.env.VITE_API_URL as string;
+
+import { useAuthStore } from ':store';
 
 // Интерфейсы
 export interface CanvasData {
@@ -26,8 +28,18 @@ export interface ErrorResponse {
 	details?: any;
 }
 
+export interface AuthResponse {
+	access_token: string;
+	refresh_token?: string;
+}
+
+export interface LoginCredentials {
+	email: string;
+	password: string;
+}
+
 // Вспомогательная функция для обработки ответа
-const handleResponse = async (response: Response) => {
+export const handleResponse = async (response: Response) => {
 	if (!response.ok) {
 		const errorData: ErrorResponse = await response.json().catch(() => ({
 			code: response.status,
@@ -39,7 +51,90 @@ const handleResponse = async (response: Response) => {
 	return response.json();
 };
 
+// Обёртка для запросов с авторизацией
+const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
+	const authStore = useAuthStore.getState();
+	let token = authStore.accessToken;
+
+	// Создаём объект заголовков с явной типизацией
+	const headers: Record<string, string> = {
+		...(typeof options.headers === 'object' &&
+		!Array.isArray(options.headers) &&
+		!(options.headers instanceof Headers)
+			? options.headers
+			: {}),
+		...(token ? { Authorization: `Bearer ${token}` } : {}),
+	};
+
+	// Для FormData не добавляем Content-Type
+	if (!(options.body instanceof FormData)) {
+		headers['Content-Type'] = 'application/json';
+	}
+
+	// Первоначальный запрос
+	const response = await fetch(url, {
+		...options,
+		headers,
+	});
+
+	// Обработка 401
+	if (response.status === 401 && authStore.refreshToken) {
+		try {
+			const { access_token, refresh_token } = await refreshToken(authStore.refreshToken);
+			authStore.setAuth(access_token, refresh_token);
+
+			// Повторяем запрос с новым токеном
+			const retryHeaders: Record<string, string> = {
+				...(typeof options.headers === 'object' &&
+				!Array.isArray(options.headers) &&
+				!(options.headers instanceof Headers)
+					? options.headers
+					: {}),
+				Authorization: `Bearer ${access_token}`,
+			};
+
+			if (!(options.body instanceof FormData)) {
+				retryHeaders['Content-Type'] = 'application/json';
+			}
+
+			return fetch(url, {
+				...options,
+				headers: retryHeaders,
+			});
+		} catch (error) {
+			authStore.clearAuth();
+			throw new Error('Сессия истекла. Пожалуйста, войдите заново.');
+		}
+	}
+
+	return response;
+};
+
 // Методы API
+export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
+	const response = await fetch(`${API_URL}/auth/login`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(credentials),
+	});
+
+	return handleResponse(response);
+};
+
+export const refreshToken = async (refreshToken: string): Promise<AuthResponse> => {
+	const response = await fetch(`${API_URL}/auth/refresh`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ refresh_token: refreshToken }),
+	});
+
+	return handleResponse(response);
+};
+
 export const getAllCanvases = async ({
 	name = '',
 	created_at = '',
@@ -51,35 +146,20 @@ export const getAllCanvases = async ({
 	const url = `${API_URL}/canvas?${params.toString()}`;
 	console.log('Requesting URL:', url);
 
-	const response = await fetch(url, {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-	});
-
+	const response = await fetchWithAuth(url, { method: 'GET' });
 	const data = await handleResponse(response);
 	console.log('API response:', data);
 	return data;
 };
 
 export const getCanvasById = async (id: string): Promise<CanvasDataFull> => {
-	const response = await fetch(`${API_URL}/canvas/${id}`, {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-	});
-
+	const response = await fetchWithAuth(`${API_URL}/canvas/${id}`, { method: 'GET' });
 	return handleResponse(response);
 };
 
 export const createCanvas = async (canvas_name: string): Promise<CanvasData> => {
-	const response = await fetch(`${API_URL}/canvas`, {
+	const response = await fetchWithAuth(`${API_URL}/canvas`, {
 		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
 		body: JSON.stringify({ canvas_name }),
 	});
 
@@ -88,12 +168,10 @@ export const createCanvas = async (canvas_name: string): Promise<CanvasData> => 
 
 export const updateCanvas = async (id: string, data: any): Promise<CanvasData> => {
 	try {
-		// Проверяем, что data существует
 		if (!data) {
 			throw new Error('Data is missing');
 		}
 
-		// Логируем тип данных
 		console.log('Data for update:', {
 			dataType: data instanceof Blob ? 'Blob' : typeof data,
 			...(data instanceof Blob ? { type: data.type, size: data.size } : {}),
@@ -102,7 +180,6 @@ export const updateCanvas = async (id: string, data: any): Promise<CanvasData> =
 		const formData = new FormData();
 		formData.append('file', data);
 
-		// Логируем содержимое FormData
 		for (const [key, value] of formData.entries()) {
 			console.log('FormData entry:', {
 				key,
@@ -112,7 +189,7 @@ export const updateCanvas = async (id: string, data: any): Promise<CanvasData> =
 
 		console.log('Sending PUT request:', { url: `${API_URL}/canvas/${id}` });
 
-		const response = await fetch(`${API_URL}/canvas/${id}`, {
+		const response = await fetchWithAuth(`${API_URL}/canvas/${id}`, {
 			method: 'PUT',
 			body: formData,
 		});
@@ -125,12 +202,7 @@ export const updateCanvas = async (id: string, data: any): Promise<CanvasData> =
 };
 
 export const deleteCanvas = async (id: number): Promise<void> => {
-	const response = await fetch(`${API_URL}/canvas/${id}`, {
-		method: 'DELETE',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-	});
+	const response = await fetchWithAuth(`${API_URL}/canvas/${id}`, { method: 'DELETE' });
 
 	if (!response.ok) {
 		const errorData: ErrorResponse = await response.json().catch(() => ({
@@ -146,7 +218,6 @@ export const getOcr = async (image: File): Promise<OcrResponse> => {
 	const formData = new FormData();
 	formData.append('file', image);
 
-	// Логируем содержимое FormData
 	for (const [key, value] of formData.entries()) {
 		console.log('FormData entry:', {
 			key,
@@ -154,7 +225,7 @@ export const getOcr = async (image: File): Promise<OcrResponse> => {
 		});
 	}
 
-	const response = await fetch(`${API_URL}/ml/image-to-text`, {
+	const response = await fetchWithAuth(`${API_URL}/ml/image-to-text`, {
 		method: 'POST',
 		body: formData,
 	});
@@ -163,11 +234,8 @@ export const getOcr = async (image: File): Promise<OcrResponse> => {
 };
 
 export const textToImage = async (text: string): Promise<TextToImageResponse> => {
-	const response = await fetch(`${API_URL}/ml/text-to-image`, {
+	const response = await fetchWithAuth(`${API_URL}/ml/text-to-image`, {
 		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
 		body: JSON.stringify({ text }),
 	});
 

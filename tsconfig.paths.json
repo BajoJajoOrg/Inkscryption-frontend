@@ -33,7 +33,9 @@
 			":hooks/*": ["src/hooks/*"],
 			"package.json": ["./package.json"],
 			":lib": ["src/lib"],
-			":lib/*": ["src/lib/*"]
+			":lib/*": ["src/lib/*"],
+			":store": ["src/store"],
+			":store/*": ["src/store/*"]
 		}
 	}
 }

@@ -1,0 +1,19 @@
+.header {
+    text-align: center;
+    margin-bottom: 24px;
+    font-size: 140px;
+}
+
+.root {
+    border: 5px solid;
+    display: flex;
+    flex-direction: column;
+    min-height: 670px;
+    min-width: 860px;
+    justify-content: center;
+    box-shadow: 57px 57px 0 rgba(0, 0, 0, 1);
+}
+
+.form { 
+    padding: 0 20%;
+}

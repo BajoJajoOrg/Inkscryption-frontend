@@ -2,7 +2,7 @@
 import * as fabric from 'fabric';
 import { TCanvasMode } from './types';
 import AIIcon from '../../assets/svg/icons/ai.svg';
-import { textToImage } from ':services/api';
+import { textToImage } from ':api/api';
 import { saveHistoryExternal } from './canvasHistory';
 
 const AIImg = document.createElement('img');
