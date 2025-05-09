@@ -232,9 +232,10 @@ export const deleteCanvas = async (id: number): Promise<void> => {
 	}
 };
 
-export const getOcr = async (image: File): Promise<OcrResponse> => {
+export const getOcr = async (image: File, id: string): Promise<OcrResponse> => {
 	const formData = new FormData();
 	formData.append('file', image);
+	formData.append('id', id);
 
 	for (const [key, value] of formData.entries()) {
 		console.log('FormData entry:', {

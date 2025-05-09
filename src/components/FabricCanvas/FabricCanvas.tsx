@@ -14,6 +14,7 @@ import {
 	applyCanvasMode,
 	initializeCanvas,
 	setSaveHistoryExternal,
+	setCanvasRef,
 	setSaveCanvasExternal,
 } from ':lib/canvas';
 import { useParams } from 'react-router-dom';
@@ -73,9 +74,15 @@ export const FabricCanvas = () => {
 		applyCurrentMode();
 
 		getCanvasById(id || '0').then(async (res) => {
-			const jsonCanvas = JSON.parse(atob(res.data));
-			loadJSON(jsonCanvas);
-			setHistory([jsonCanvas]);
+			try {
+				console.log(res.text);
+				localStorage.setItem('aitext', res.text);
+				const jsonCanvas = JSON.parse(atob(res.data));
+				loadJSON(jsonCanvas);
+				setHistory([jsonCanvas]);
+			} catch {
+				console.error('Не получилось загрузить канвас.');
+			}
 		});
 	}, [applyCurrentMode, saveHistory, id, loadJSON]);
 
@@ -88,6 +95,10 @@ export const FabricCanvas = () => {
 	useEffect(() => {
 		setSaveHistoryExternal(saveHistory);
 	}, [saveHistory]);
+
+	useEffect(() => {
+		setCanvasRef(fabricRef.current);
+	}, [fabricRef]);
 
 	useEffect(() => {
 		if (!containerRef.current || !fabricRef.current) return;
@@ -131,11 +142,11 @@ export const FabricCanvas = () => {
 	const handleGetText = useCallback(async () => {
 		const canvas = fabricRef.current;
 		if (!canvas) return;
-		localStorage.setItem('aitext', 'Loading...');
-		const extracted = await extractTextFromCanvas(canvas);
-		console.log(extracted);
+		localStorage.setItem('aitext', 'Обработка...');
+		handleSaveCanvas();
+		const extracted = await extractTextFromCanvas(canvas, id || '0');
 		localStorage.setItem('aitext', extracted);
-	}, []);
+	}, [id, handleSaveCanvas]);
 
 	const toggleMode = (mode: TCanvasMode) => {
 		setMode(mode);

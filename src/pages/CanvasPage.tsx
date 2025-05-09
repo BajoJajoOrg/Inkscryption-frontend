@@ -14,7 +14,7 @@ const CanvasPage: React.FC = () => {
 	const [messageApi, contextHolder] = message.useMessage();
 
 	const { data, isLoading, error } = useQuery<CanvasData[]>({
-		queryKey: ['canvasesAll'],
+		queryKey: ['canvasesAll', id],
 		queryFn: () => getAllCanvases({}),
 	});
 
