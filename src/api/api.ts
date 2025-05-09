@@ -28,6 +28,14 @@ export interface ErrorResponse {
 	details?: any;
 }
 
+export interface CanvasData {
+	id: number;
+	canvas_name: string;
+	created_at: string;
+	update_time: string;
+	directory_id?: number;
+}
+
 // export interface AuthResponse {
 // 	access_token: string;
 // 	refresh_token?: string;
@@ -167,16 +175,32 @@ export const getCanvasById = async (id: string): Promise<CanvasDataFull> => {
 	return handleResponse(response);
 };
 
-export const createCanvas = async (canvas_name: string): Promise<CanvasData> => {
-	const response = await fetch(`${API_URL}/canvas`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify({ canvas_name }),
-	});
+export const createCanvas = async (name: string, folderId?: number): Promise<CanvasData> => {
+	try {
+		const response = await fetch('/api/canvas', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				// 'Authorization': `Bearer ${token}`,
+			},
+			body: JSON.stringify({
+				name,
+				folder_id: folderId || null,
+			}),
+		});
 
-	return handleResponse(response);
+		if (!response.ok) {
+			const errorData = await response.json();
+			throw new Error(errorData.message || 'Failed to create canvas');
+		}
+
+		return await response.json();
+	} catch (error) {
+		throw {
+			message: error instanceof Error ? error.message : 'Unknown error',
+			details: error,
+		} as ErrorResponse;
+	}
 };
 
 export const updateCanvas = async (id: string, data: any): Promise<CanvasData> => {
