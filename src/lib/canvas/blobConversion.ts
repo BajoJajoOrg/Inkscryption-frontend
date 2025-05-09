@@ -5,5 +5,10 @@ export const JSONtoBlob = (data: any) => {
 };
 
 export const BlobToJSON = async (blob: any) => {
-	return JSON.parse(await blob.text());
+	try {
+		const data = JSON.parse(await blob.text());
+		return data;
+	} catch {
+		console.error('Не получилось распаковать канвас.');
+	}
 };

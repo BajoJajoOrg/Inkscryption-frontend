@@ -1,7 +1,0 @@
-.canvas-wrap {
-	box-sizing: border-box;
-	border: 2px black solid;
-	width: 100%;
-	height: min(60dvh, 60dvw);
-	position: relative;
-}

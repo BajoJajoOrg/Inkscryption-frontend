@@ -1,19 +1,27 @@
 // components/FabricCanvas.tsx
 import { useRef, useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import * as fabric from 'fabric';
-import './FabricCanvas.css';
+import styles from './styles.module.scss';
 
-import { initializeCanvas } from '../../lib/canvas/initCanvas';
-import { applyCanvasMode } from '../../lib/canvas/applyCanvasMode';
-import { registerPointerTracking } from '../../lib/canvas/pointerTracking';
-import { saveCanvasState, loadCanvasState } from '../../lib/canvas/canvasHistory';
-import { extractTextFromCanvas } from '../../lib/canvas/canvasExtractText';
 import { Toolbar } from '../CanvasToolbar/CanvasToolbar';
-import { TCanvasMode } from '../../lib/canvas/types';
-import { BlobToJSON, JSONtoBlob } from '../../lib/canvas/blobConversion';
+import {
+	JSONtoBlob,
+	TCanvasMode,
+	saveCanvasState,
+	loadCanvasState,
+	extractTextFromCanvas,
+	registerPointerTracking,
+	applyCanvasMode,
+	initializeCanvas,
+	setSaveHistoryExternal,
+	setCanvasRef,
+	setSaveCanvasExternal,
+	setExtractTextExternal,
+} from ':lib/canvas';
 import { useParams } from 'react-router-dom';
-import { getCanvasById, updateCanvas } from ':services/api';
-import axios from 'axios';
+import { getCanvasById, updateCanvas } from ':api/api';
+import { CanvasUploadDrawer } from ':components/CanvasUploadDrawer/CanvasUploadDrawer';
+import { CanvasTextDrawer } from ':components/CanvasTextDrawer/CanvasTextDrawer';
 
 export const FabricCanvas = () => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -69,14 +77,15 @@ export const FabricCanvas = () => {
 		applyCurrentMode();
 
 		getCanvasById(id || '0').then(async (res) => {
-			console.log(res.canvases[0].canvas_url);
-			const data = res.canvases[0].canvas_url;
-			const file = await axios.get(data);
-			console.log({ file });
-			const extractedData = await BlobToJSON(data);
-			loadJSON(extractedData);
-			const json = saveCanvasState(canvas);
-			setHistory([json]);
+			try {
+				console.log(res.text);
+				localStorage.setItem('aitext', res.text);
+				const jsonCanvas = JSON.parse(atob(res.data));
+				loadJSON(jsonCanvas);
+				setHistory([jsonCanvas]);
+			} catch {
+				console.error('Не получилось загрузить канвас.');
+			}
 		});
 	}, [applyCurrentMode, saveHistory, id, loadJSON]);
 
@@ -85,6 +94,14 @@ export const FabricCanvas = () => {
 		if (fabricRef.current) saveHistory();
 		return cleanup;
 	}, [saveHistory]);
+
+	useEffect(() => {
+		setSaveHistoryExternal(saveHistory);
+	}, [saveHistory]);
+
+	useEffect(() => {
+		setCanvasRef(fabricRef.current);
+	}, [fabricRef]);
 
 	useEffect(() => {
 		if (!containerRef.current || !fabricRef.current) return;
@@ -121,27 +138,34 @@ export const FabricCanvas = () => {
 
 	const handleSaveCanvas = useCallback(async () => {
 		const saveData = history[history.length - 1];
-		// console.log(saveData);
 		const blob = JSONtoBlob(saveData);
-		// console.log(blob);
-		// const extractedData = await BlobToJSON(blob);
-		// console.log(extractedData === saveData);
-		updateCanvas(id || '0', blob);
+		await updateCanvas(id || '0', blob);
 	}, [history, id]);
 
 	const handleGetText = useCallback(async () => {
 		const canvas = fabricRef.current;
 		if (!canvas) return;
-		localStorage.setItem('aitext', 'Loading...');
-		const extracted = await extractTextFromCanvas(canvas);
-		console.log(extracted);
+		localStorage.setItem('aitext', 'Обработка...');
+		handleSaveCanvas();
+		const extracted = await extractTextFromCanvas(canvas, id || '0');
 		localStorage.setItem('aitext', extracted);
-	}, []);
+	}, [id, handleSaveCanvas]);
 
 	const toggleMode = (mode: TCanvasMode) => {
 		setMode(mode);
 		modeRef.current = mode;
 	};
+
+	useEffect(() => {
+		setSaveCanvasExternal(handleSaveCanvas);
+	}, [handleSaveCanvas]);
+
+	useEffect(() => {
+		setExtractTextExternal(handleGetText);
+	}, [handleGetText]);
+
+	const [UploadDrawer, showUD] = CanvasUploadDrawer();
+	const [TextDrawer, showTD] = CanvasTextDrawer();
 
 	return (
 		<div>
@@ -168,10 +192,12 @@ export const FabricCanvas = () => {
 				}}
 				onUndo={handleUndo}
 				onRedo={handleRedo}
-				onSave={handleSaveCanvas}
-				onExtractText={handleGetText}
+				onShowFileDrawer={showUD}
+				onShowAIDrawer={showTD}
 			/>
-			<div ref={containerRef} className="canvas-wrap">
+			{UploadDrawer}
+			{TextDrawer}
+			<div ref={containerRef} className={styles.canvasWrap}>
 				<canvas ref={canvasRef} />
 			</div>
 		</div>

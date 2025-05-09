@@ -1,57 +1,26 @@
 import { Layout, Breadcrumb } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CanvasData } from ':services/api';
+import { CanvasData } from ':api/api';
 import styles from './styles.module.scss';
+import { memo, useMemo } from 'react';
 
 const { Content } = Layout;
 
 interface ProtectedLayoutProps {
-    children: React.ReactNode;
-    canvases: CanvasData[]; // Добавляем пропс для передачи canvases
+	children: React.ReactNode;
 }
 
-const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children, canvases }) => {
-    const location = useLocation();
-    const navigate = useNavigate();
+const ProtectedLayout: React.FC<ProtectedLayoutProps> = memo(({ children }) => {
 
-    const getBreadcrumbItems = () => {
-        const pathSegments = location.pathname.split('/').filter(Boolean);
-        const items = [
-            { title: 'Главная', href: '/', onClick: () => navigate('/') },
-        ];
-
-        if (pathSegments[0] === 'canvas' && pathSegments[1]) {
-            const canvasId = pathSegments[1];
-            const currentCanvas = canvases.find((c) => c.id === +canvasId);
-            items.push({
-				title: currentCanvas ? currentCanvas.canvas_name : `Лист ${canvasId}`,
-				href: '',
-				onClick: () => console.log()
-			});
-        }
-
-        return items;
-    };
-
-    return (
-        <Layout className={styles.root}>
-            <Content style={{ padding: '0 50px' }}>
-                <Breadcrumb
-                    style={{ margin: '16px 0' }}
-                    items={getBreadcrumbItems()}
-                    itemRender={(route, _, routes) => {
-                        const last = routes.indexOf(route) === routes.length - 1;
-                        return last ? (
-                            <span>{route.title}</span>
-                        ) : (
-                            <a onClick={route.onClick}>{route.title}</a>
-                        );
-                    }}
-                />
-                {children}
-            </Content>
-        </Layout>
-    );
-};
+	return (
+		<Layout className={location.pathname.startsWith('/canvas/') ? styles.canvasRoot : styles.root}>
+			<Content
+				style={location.pathname.startsWith('/canvas/') ? { padding: 0 } : { padding: '0 50px' }}
+			>
+				{children}
+			</Content>
+		</Layout>
+	);
+});
 
 export { ProtectedLayout };
