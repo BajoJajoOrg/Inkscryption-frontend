@@ -4,14 +4,14 @@ import { ErrorResponse } from ':api';
 import { useAuthStore } from ':store';
 import { Form, Input, Button, Alert, Typography, Layout } from 'antd';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
-import styles from './styles.module.scss';
+import styles from '../Login/styles.module.scss';
 import { login } from ':api/auth';
 import { Link } from 'react-router-dom';
 
 const { Title } = Typography;
 const { Content } = Layout;
 
-const LoginPage: React.FC = () => {
+const RegisterPage: React.FC = () => {
 	const navigate = useNavigate();
 	const setAuth = useAuthStore((state) => state.setAuth);
 	const mutation = useMutation({
@@ -21,13 +21,13 @@ const LoginPage: React.FC = () => {
 			navigate('/');
 		},
 		onError: (error: ErrorResponse) => {
-			console.error('Ошибка входа:', error.message);
+			console.error('Ошибка регистрации:', error.message);
 		},
 	});
 
-	const handleLogin = () => {
+	const handleRegister = () => {
 		// Имитация входа (без реального API)
-		console.log('Вход выполнен (фиктивный пользователь)');
+		console.log('Регистрация выполнена (фиктивный пользователь)');
 		navigate('/');
 	};
 
@@ -42,7 +42,7 @@ const LoginPage: React.FC = () => {
 			}}
 		>
 			<div className={styles.root}>
-				<span className={styles.header}>Вход</span>
+				<span className={styles.header}>Регистрация</span>
 				{/* <Button type="primary" size="large" block onClick={handleLogin}>
 					Войти (тестовый режим)
 				</Button> */}
@@ -80,21 +80,21 @@ const LoginPage: React.FC = () => {
 							block
 							className={styles.continueBtn}
 						>
-							{mutation.isPending ? 'Вход...' : 'Войти'}
+							{mutation.isPending ? 'Регистрируем...' : 'Продолжить'}
 						</Button>
 					</Form.Item>
 					{mutation.isError && (
 						<Alert
-							message="Ошибка входа"
+							message="Ошибка регистрации"
 							description={(mutation.error as ErrorResponse).message}
 							type="error"
 							showIcon
 						/>
 					)}
 					<p className={styles.footer}>
-						Нет аккаунта?
-						<Link className={styles.link} to="/register">
-							Регистрация
+						Есть аккаунт?
+						<Link className={styles.link} to="/login">
+							Вход
 						</Link>
 					</p>
 				</Form>
@@ -103,4 +103,4 @@ const LoginPage: React.FC = () => {
 	);
 };
 
-export default LoginPage;
+export default RegisterPage;

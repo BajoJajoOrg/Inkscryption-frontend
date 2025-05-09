@@ -5,6 +5,7 @@ import NotFound from '../pages/NotFound';
 import { JSX } from 'react';
 import { useAuthStore } from ':store';
 import LoginPage from ':pages/Login';
+import RegisterPage from ':pages/Register';
 
 interface ProtectedRouteProps {
 	children: JSX.Element;
@@ -24,11 +25,12 @@ const AppRoutes: React.FC = () => {
 	return (
 		<Routes>
 			<Route path="/login" element={<LoginPage />} />
+			<Route path="/register" element={<RegisterPage />} />
 			<Route
 				path="/"
 				element={
 					// <PrivateRoute>
-						<Home />
+					<Home />
 					// </PrivateRoute>
 				}
 			/>
@@ -36,7 +38,7 @@ const AppRoutes: React.FC = () => {
 				path="/canvas/:id"
 				element={
 					// <PrivateRoute>
-						<CanvasPage />
+					<CanvasPage />
 					// </PrivateRoute>
 				}
 			/>
