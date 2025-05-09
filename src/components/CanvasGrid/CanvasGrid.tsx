@@ -143,21 +143,14 @@ const CanvasGrid: React.FC<CanvasGridProps> = memo(({ content, directoryId }) =>
 			)}
 
 			{content.directories.map((directory) => (
-				<div key={`dir-${directory.id}`} className={styles.canavsContainer}>
-					<div onClick={() => navigate(`/directory/${directory.id}`)}>
-						<FolderIcon />
-						<span className={styles.title}>{directory.name}</span>
-						<span className={styles.date}>
-							{dayjs(directory.updated_at).format('DD.MM.YYYY')}
-						</span>
-					</div>
-					<button
-						onClick={() => handleDeleteDirectory(directory.id, directory.name)}
-						className={styles.deleteButton}
-						aria-label={`Удалить директорию ${directory.name}`}
-					>
-						🗑️
-					</button>
+				<div
+					key={`dir-${directory.id}`}
+					className={styles.canavsContainer}
+					onClick={() => navigate(`/directory/${directory.id}`)}
+				>
+					<FolderIcon />
+					<span className={styles.title}>{directory.name}</span>
+					<span className={styles.date}>{dayjs(directory.updated_at).format('DD.MM.YYYY')}</span>
 				</div>
 			))}
 
@@ -168,7 +161,7 @@ const CanvasGrid: React.FC<CanvasGridProps> = memo(({ content, directoryId }) =>
 					className={styles.canavsContainer}
 				>
 					<NoteIcon />
-					<span className={styles.title}>{canvas.canvas_name}</span>
+					<span className={styles.title}>{canvas.name}</span>
 					<span className={styles.date}>{dayjs(canvas.update_time).format('DD.MM.YYYY')}</span>
 				</div>
 			))}
