@@ -1,21 +1,16 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { ErrorResponse } from ':api';
+import { ErrorResponse, register } from ':api';
 import { useAuthStore } from ':store';
-import { Form, Input, Button, Alert, Typography, Layout } from 'antd';
-import { LockOutlined, MailOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Alert, Layout } from 'antd';
 import styles from '../Login/styles.module.scss';
-import { login } from ':api/auth';
 import { Link } from 'react-router-dom';
-
-const { Title } = Typography;
-const { Content } = Layout;
 
 const RegisterPage: React.FC = () => {
 	const navigate = useNavigate();
 	const setAuth = useAuthStore((state) => state.setAuth);
 	const mutation = useMutation({
-		mutationFn: login,
+		mutationFn: register,
 		onSuccess: (data) => {
 			setAuth(data.access_token, data.refresh_token);
 			navigate('/');
@@ -24,12 +19,6 @@ const RegisterPage: React.FC = () => {
 			console.error('Ошибка регистрации:', error.message);
 		},
 	});
-
-	const handleRegister = () => {
-		// Имитация входа (без реального API)
-		console.log('Регистрация выполнена (фиктивный пользователь)');
-		navigate('/');
-	};
 
 	return (
 		<Layout

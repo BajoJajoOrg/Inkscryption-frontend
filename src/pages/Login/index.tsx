@@ -2,14 +2,10 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { ErrorResponse, login } from ':api';
 import { useAuthStore } from ':store';
-import { Form, Input, Button, Alert, Typography, Layout } from 'antd';
-import { LockOutlined, MailOutlined } from '@ant-design/icons';
-import styles from './styles.module.scss';
-import { login } from ':api/auth';
-import { Link } from 'react-router-dom';
+import { Form, Input, Button, Alert, Layout } from 'antd';
 
-const { Title } = Typography;
-const { Content } = Layout;
+import styles from './styles.module.scss';
+import { Link } from 'react-router-dom';
 
 const LoginPage: React.FC = () => {
 	const navigate = useNavigate();
@@ -24,12 +20,6 @@ const LoginPage: React.FC = () => {
 			console.error('Ошибка входа:', error.message);
 		},
 	});
-
-	const handleLogin = () => {
-		// Имитация входа (без реального API)
-		console.log('Вход выполнен (фиктивный пользователь)');
-		navigate('/');
-	};
 
 	return (
 		<Layout

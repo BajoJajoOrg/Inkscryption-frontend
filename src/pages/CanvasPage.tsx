@@ -67,8 +67,8 @@ const CanvasPage: React.FC = () => {
 	if (!canvas) return <div>Лист не найден</div>;
 
 	return (
-		<ProtectedLayout canvases={data}>
-			<CanvasHeader title={canvas.canvas_name} />
+		<ProtectedLayout>
+			<CanvasHeader title={canvas.name} />
 			<FabricCanvas />
 			{contextHolder}
 		</ProtectedLayout>

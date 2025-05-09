@@ -114,6 +114,18 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
 
 // Методы API
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
+	const response = await fetch(`http://194.87.252.210:8082/login`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(credentials),
+	});
+
+	return handleResponse(response);
+};
+
+export const register = async (credentials: LoginCredentials): Promise<AuthResponse> => {
 	const response = await fetch(`http://194.87.252.210:8082/register`, {
 		method: 'POST',
 		headers: {
@@ -219,9 +231,10 @@ export const deleteCanvas = async (id: number): Promise<void> => {
 	}
 };
 
-export const getOcr = async (image: File): Promise<OcrResponse> => {
+export const getOcr = async (image: File, id: string): Promise<OcrResponse> => {
 	const formData = new FormData();
 	formData.append('file', image);
+	formData.append('id', id);
 
 	for (const [key, value] of formData.entries()) {
 		console.log('FormData entry:', {
