@@ -43,6 +43,14 @@ const AppRoutes: React.FC = () => {
 				}
 			/>
 			<Route
+				path="/directory/:directoryId"
+				element={
+					<PrivateRoute>
+						<Home />
+					</PrivateRoute>
+				}
+			/>
+			<Route
 				path="*"
 				element={
 					<PrivateRoute>

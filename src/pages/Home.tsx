@@ -4,7 +4,7 @@ import { CanvasData, ErrorResponse, BreadcrumbItem, DirectoryData, getDirectoryC
 import { useState, useMemo, useCallback } from 'react';
 import dayjs from 'dayjs';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Breadcrumb } from 'antd';
+import { Breadcrumb, Button, Flex } from 'antd';
 
 interface DirectoryContent {
 	folder: DirectoryData;
@@ -74,7 +74,7 @@ const Home: React.FC = () => {
 
 	const getBreadcrumbItems = useMemo(() => {
 		const items = [{ title: 'Главная', href: '/', onClick: () => navigate('/') }];
-
+		console.log(content.breadcrumbs);
 		if (content.breadcrumbs.length > 0) {
 			content.breadcrumbs
 				.slice()
@@ -93,21 +93,32 @@ const Home: React.FC = () => {
 
 	return (
 		<ProtectedLayout>
-			<Breadcrumb
-				style={{ margin: '16px 0' }}
-				items={getBreadcrumbItems}
-				itemRender={(route, _, routes) => {
-					const last = routes.indexOf(route) === routes.length - 1;
-					return last ? <span>{route.title}</span> : <a onClick={route.onClick}>{route.title}</a>;
-				}}
-			/>
+			<Flex justify='space-between' align='center'>
+				<Breadcrumb
+					style={{ margin: '16px 0' }}
+					items={getBreadcrumbItems}
+					itemRender={(route, _, routes) => {
+						const last = routes.indexOf(route) === routes.length - 1;
+						return last ? (
+							<span>{route.title}</span>
+						) : (
+							<a onClick={route.onClick}>{route.title}</a>
+						);
+					}}
+				/>
+				<Button size='large'>
+					Выйти
+				</Button>
+			</Flex>
 			{isLoading ? (
 				<div>Загрузка...</div>
 			) : error ? (
 				<div>Не удалось загрузить папку</div>
 			) : (
 				<div>
-					<h1>{content.folder ? content.folder.name : 'Мои файлы'}</h1>
+					<h1>
+						{content.folder ? content.folder.name && content.folder.name !== 'root' : 'Мои файлы'}
+					</h1>
 					<CanvasFilter
 						searchTitle={searchTitle}
 						setSearchTitle={setSearchTitle}
