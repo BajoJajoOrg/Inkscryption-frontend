@@ -47,7 +47,7 @@ export const createDirectory = async (name: string, parentId?: number): Promise<
 		method: 'POST',
 		body: JSON.stringify({
 			name,
-			parent_folder_id: parentId || null,
+			parent: parentId || null,
 		}),
 	});
 

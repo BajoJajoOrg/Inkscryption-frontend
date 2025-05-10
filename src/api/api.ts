@@ -176,7 +176,7 @@ export const createCanvas = async (name: string, folderId?: number): Promise<Can
 		method: 'POST',
 		body: JSON.stringify({
 			name: name,
-			directory_id: folderId || 0,
+			folder_id: folderId || 0,
 		}),
 	});
 
