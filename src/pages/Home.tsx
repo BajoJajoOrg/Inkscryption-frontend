@@ -5,6 +5,7 @@ import { useState, useMemo, useCallback } from 'react';
 import dayjs from 'dayjs';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Breadcrumb, Button, Flex } from 'antd';
+import { useAuthStore } from ':store';
 
 interface DirectoryContent {
 	folder: DirectoryData;
@@ -17,7 +18,8 @@ const Home: React.FC = () => {
 	const { directoryId } = useParams<{ directoryId?: string }>();
 	const [searchTitle, setSearchTitleState] = useState('');
 	const [dateRange, setDateRangeState] = useState<[string | null, string | null]>([null, null]);
-
+	const logout = useAuthStore((state) => state.logout);
+	
 	const setSearchTitle = useCallback((value: string) => {
 		setSearchTitleState(value);
 	}, []);
@@ -91,9 +93,14 @@ const Home: React.FC = () => {
 		return items;
 	}, [content.breadcrumbs, navigate]);
 
+	const handleLogout = () => {
+		logout();
+		navigate('/login');
+	  };
+
 	return (
 		<ProtectedLayout>
-			<Flex justify='space-between' align='center'>
+			<Flex justify="space-between" align="center">
 				<Breadcrumb
 					style={{ margin: '16px 0' }}
 					items={getBreadcrumbItems}
@@ -106,7 +113,7 @@ const Home: React.FC = () => {
 						);
 					}}
 				/>
-				<Button size='large'>
+				<Button size="large" onClick={handleLogout}>
 					Выйти
 				</Button>
 			</Flex>

@@ -13,7 +13,11 @@ const LoginPage: React.FC = () => {
 	const mutation = useMutation({
 		mutationFn: login,
 		onSuccess: (data) => {
-			setAuth(data.access_token, data.refresh_token);
+			setAuth({
+				access_token: data.access_token,
+				id: data.id,
+				email: data.email,
+			  });
 			navigate('/');
 		},
 		onError: (error: ErrorResponse) => {
