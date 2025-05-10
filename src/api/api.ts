@@ -114,7 +114,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
 
 // Методы API
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-	const response = await fetch(`http://194.87.252.210:8082/login`, {
+	const response = await fetch(`https://auth.hooli-pishem.ru/login`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
 };
 
 export const register = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-	const response = await fetch(`http://194.87.252.210:8082/register`, {
+	const response = await fetch(`https://auth.hooli-pishem.ru/register`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
