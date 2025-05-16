@@ -25,12 +25,14 @@ interface ToolbarProps {
 	isErasing: boolean;
 	isSelecting: boolean;
 	isTextMode: boolean;
+	isDragging: boolean;
 	onToggleDraw: () => void;
 	onToggleErase: () => void;
 	onToggleSelect: () => void;
 	onToggleText: () => void;
 	onUndo: () => void;
 	onRedo: () => void;
+	onToggleDrag: () => void;
 	onShowFileDrawer: () => void;
 	onShowAIDrawer: () => void;
 }
@@ -40,12 +42,14 @@ export const Toolbar: FC<ToolbarProps> = ({
 	isErasing,
 	isSelecting,
 	isTextMode,
+	isDragging,
 	onToggleDraw,
 	onToggleErase,
 	onToggleSelect,
 	onToggleText,
 	onUndo,
 	onRedo,
+	onToggleDrag,
 	onShowFileDrawer: onSave,
 	onShowAIDrawer: onExtractText,
 }) => {
@@ -222,6 +226,13 @@ export const Toolbar: FC<ToolbarProps> = ({
 								title="Текст"
 							>
 								<img className={styles.toolbar__icon} src={TextIcon} />
+							</button>
+							<button
+								className={clsx(styles.toolbar__button, isDragging && styles.selected)}
+								onClick={onToggleDrag}
+								title="Ладонь"
+							>
+								<img className={styles.toolbar__icon} src={BrushIcon} />
 							</button>
 							<button
 								ref={refUndo}

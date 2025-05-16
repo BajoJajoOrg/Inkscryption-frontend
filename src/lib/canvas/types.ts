@@ -1,1 +1,1 @@
-export type TCanvasMode = "draw" | "erase" | "select" | "text";
+export type TCanvasMode = 'draw' | 'erase' | 'select' | 'text' | 'drag';

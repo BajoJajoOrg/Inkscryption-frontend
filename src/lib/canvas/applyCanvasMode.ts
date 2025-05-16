@@ -1,12 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as fabric from 'fabric';
 import { TCanvasMode } from './types';
-import AIIcon from '../../assets/svg/icons/ai.svg';
+import AIIcon from ':svg/icons/ai.svg';
+import EraserIcon from ':svg/icons/eraser_b.svg?raw';
 import { textToImage } from ':api/api';
 import { saveHistoryExternal } from './canvasHistory';
 
 const AIImg = document.createElement('img');
 AIImg.src = AIIcon;
+
+function svgCursorStringify(svg: string, hotspotX = 12, hotspotY = 12): string {
+	const cleaned = svg
+		.replace(/\n/g, '') // Remove line breaks
+		.replace(/"/g, "'") // Replace double quotes with single quotes
+		.trim();
+	return `url("data:image/svg+xml;utf8,${cleaned}") ${hotspotX} ${hotspotY}, auto`;
+}
 
 export function applyCanvasMode(
 	canvas: fabric.Canvas,
@@ -17,13 +26,59 @@ export function applyCanvasMode(
 	history: string[]
 ) {
 	canvas.off('mouse:move');
+	canvas.off('mouse:down');
 	canvas.off('text:editing:exited');
+	canvas.forEachObject(function (o) {
+		o.selectable = true;
+	});
+
+	canvas.on('mouse:wheel', function (opt) {
+		const delta = opt.e.deltaY;
+		let zoom = canvas.getZoom();
+		zoom *= 0.999 ** delta;
+		if (zoom > 20) zoom = 20;
+		if (zoom < 0.01) zoom = 0.01;
+		canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+		opt.e.preventDefault();
+		opt.e.stopPropagation();
+	});
 
 	if (mode === 'select') {
 		canvas.isDrawingMode = false;
 		canvas.selection = true;
 		canvas.skipTargetFind = false;
 		canvas.getObjects().forEach((obj) => (obj.selectable = true));
+	} else if (mode === 'drag') {
+		canvas.isDrawingMode = false;
+		canvas.skipTargetFind = true;
+		canvas.selection = false;
+		canvas.on('mouse:down', function (opt) {
+			const evt = opt.e;
+			canvas.isDrawingMode = false;
+			canvas.skipTargetFind = true;
+			canvas.selection = false;
+			canvas.getObjects().forEach((obj) => (obj.selectable = false));
+			this.isDragging = true;
+			this.selection = false;
+			this.lastPosX = evt.clientX;
+			this.lastPosY = evt.clientY;
+		});
+		canvas.on('mouse:move', function (opt) {
+			if (this.isDragging) {
+				const e = opt.e;
+				const vpt = this.viewportTransform;
+				vpt[4] += e.clientX - this.lastPosX;
+				vpt[5] += e.clientY - this.lastPosY;
+				this.requestRenderAll();
+				this.lastPosX = e.clientX;
+				this.lastPosY = e.clientY;
+			}
+		});
+		canvas.on('mouse:up', function (opt) {
+			this.setViewportTransform(this.viewportTransform);
+			this.isDragging = false;
+			this.selection = true;
+		});
 	} else if (mode === 'draw') {
 		canvas.isDrawingMode = true;
 		canvas.selection = false;
@@ -34,13 +89,24 @@ export function applyCanvasMode(
 		brush.color = '#000000';
 		canvas.freeDrawingBrush = brush;
 	} else if (mode === 'erase') {
+		canvas.defaultCursor = `${svgCursorStringify(EraserIcon)}`;
 		canvas.isDrawingMode = false;
-		canvas.selection = false;
 		canvas.skipTargetFind = false;
-		canvas.getObjects().forEach((obj) => (obj.selectable = false));
+		canvas.selection = false;
+		canvas.getObjects().forEach((obj) => {
+			obj.selectable = false;
+			obj.hasControls = false;
+			obj.hasBorders = false;
+		});
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const handleMouseMove = (options: any) => {
+			canvas.hoverCursor = `${svgCursorStringify(EraserIcon)}`;
+			canvas.getObjects().forEach((obj) => {
+				obj.selectable = false;
+				obj.hasControls = false;
+				obj.hasBorders = false;
+			});
 			if (isMouseDownRef.current && options.target) {
 				canvas.remove(options.target);
 				saveHistory();

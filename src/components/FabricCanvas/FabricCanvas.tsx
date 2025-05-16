@@ -174,6 +174,7 @@ export const FabricCanvas = () => {
 				isSelecting={mode === 'select'}
 				isErasing={mode === 'erase'}
 				isTextMode={mode === 'text'}
+				isDragging={mode === 'drag'}
 				onToggleDraw={() => {
 					toggleMode('draw');
 					applyCurrentMode();
@@ -192,6 +193,10 @@ export const FabricCanvas = () => {
 				}}
 				onUndo={handleUndo}
 				onRedo={handleRedo}
+				onToggleDrag={() => {
+					toggleMode('drag');
+					applyCurrentMode();
+				}}
 				onShowFileDrawer={showUD}
 				onShowAIDrawer={showTD}
 			/>
