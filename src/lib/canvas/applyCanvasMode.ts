@@ -3,17 +3,16 @@ import * as fabric from 'fabric';
 import { TCanvasMode } from './types';
 import AIIcon from ':svg/icons/ai.svg';
 import EraserIcon from ':svg/icons/eraser_b.svg?raw';
+import PenIcon from ':svg/icons/pen_b.svg?raw';
+import TextIcon from ':svg/icons/text_b.svg?raw';
 import { textToImage } from ':api/api';
 import { saveHistoryExternal } from './canvasHistory';
 
 const AIImg = document.createElement('img');
 AIImg.src = AIIcon;
 
-function svgCursorStringify(svg: string, hotspotX = 12, hotspotY = 12): string {
-	const cleaned = svg
-		.replace(/\n/g, '') // Remove line breaks
-		.replace(/"/g, "'") // Replace double quotes with single quotes
-		.trim();
+function svgCursorStringify(svg: string, hotspotX = 0, hotspotY = 16): string {
+	const cleaned = svg.replace(/\n/g, '').replace(/"/g, "'").trim();
 	return `url("data:image/svg+xml;utf8,${cleaned}") ${hotspotX} ${hotspotY}, auto`;
 }
 
@@ -27,6 +26,7 @@ export function applyCanvasMode(
 ) {
 	canvas.off('mouse:move');
 	canvas.off('mouse:down');
+	canvas.off('mouse:up');
 	canvas.off('text:editing:exited');
 	canvas.forEachObject(function (o) {
 		o.selectable = true;
@@ -48,16 +48,24 @@ export function applyCanvasMode(
 		canvas.selection = true;
 		canvas.skipTargetFind = false;
 		canvas.getObjects().forEach((obj) => (obj.selectable = true));
+		canvas.defaultCursor = 'default';
+		canvas.hoverCursor = 'move';
 	} else if (mode === 'drag') {
 		canvas.isDrawingMode = false;
 		canvas.skipTargetFind = true;
 		canvas.selection = false;
+		canvas.defaultCursor = 'grab';
+		canvas.hoverCursor = 'grab';
+		canvas.upperCanvasEl.style.cursor = 'grab';
 		canvas.on('mouse:down', function (opt) {
 			const evt = opt.e;
 			canvas.isDrawingMode = false;
 			canvas.skipTargetFind = true;
 			canvas.selection = false;
 			canvas.getObjects().forEach((obj) => (obj.selectable = false));
+			canvas.defaultCursor = 'grabbing';
+			canvas.hoverCursor = 'grabbing';
+			canvas.upperCanvasEl.style.cursor = 'grabbing';
 			this.isDragging = true;
 			this.selection = false;
 			this.lastPosX = evt.clientX;
@@ -65,6 +73,9 @@ export function applyCanvasMode(
 		});
 		canvas.on('mouse:move', function (opt) {
 			if (this.isDragging) {
+				canvas.defaultCursor = 'grabbing';
+				canvas.hoverCursor = 'grabbing';
+				canvas.upperCanvasEl.style.cursor = 'grabbing';
 				const e = opt.e;
 				const vpt = this.viewportTransform;
 				vpt[4] += e.clientX - this.lastPosX;
@@ -78,6 +89,9 @@ export function applyCanvasMode(
 			this.setViewportTransform(this.viewportTransform);
 			this.isDragging = false;
 			this.selection = true;
+			canvas.defaultCursor = 'grab';
+			canvas.hoverCursor = 'grab';
+			canvas.upperCanvasEl.style.cursor = 'grab';
 		});
 	} else if (mode === 'draw') {
 		canvas.isDrawingMode = true;
@@ -85,6 +99,9 @@ export function applyCanvasMode(
 		canvas.skipTargetFind = false;
 		canvas.getObjects().forEach((obj) => (obj.selectable = false));
 		const brush = new fabric.PencilBrush(canvas);
+		console.log(svgCursorStringify(PenIcon));
+		canvas.freeDrawingCursor = `${svgCursorStringify(PenIcon)}`;
+		canvas.defaultCursor = `${svgCursorStringify(PenIcon)}`;
 		brush.width = 3;
 		brush.color = '#000000';
 		canvas.freeDrawingBrush = brush;
@@ -107,6 +124,7 @@ export function applyCanvasMode(
 				obj.hasControls = false;
 				obj.hasBorders = false;
 			});
+			canvas.selection = false;
 			if (isMouseDownRef.current && options.target) {
 				canvas.remove(options.target);
 				saveHistory();
@@ -115,6 +133,7 @@ export function applyCanvasMode(
 		canvas.on('mouse:move', handleMouseMove);
 	} else if (mode === 'text') {
 		canvas.isDrawingMode = false;
+		canvas.defaultCursor = `${svgCursorStringify(TextIcon)}`;
 		canvas.on('text:editing:exited', () => {
 			canvas.discardActiveObject();
 			canvas.requestRenderAll();
