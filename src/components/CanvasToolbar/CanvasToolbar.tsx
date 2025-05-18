@@ -5,9 +5,10 @@ import TextIcon from ':svg/icons/text.svg';
 import MoveIcon from ':svg/icons/pointer.svg';
 import UndoIcon from ':svg/icons/undo.svg';
 import RedoIcon from ':svg/icons/redo.svg';
-import AIIcon from ':svg/icons/ai.svg';
+import AIIcon from ':svg/icons/ai_b.svg';
 import UploadIcon from ':svg/icons/upload.svg';
 import TourIcon from ':svg/icons/tour.svg';
+import PanIcon from ':svg/icons/pan_b.svg';
 import clsx from 'clsx';
 
 import PencilTour from ':gif/pencilTour.gif';
@@ -15,10 +16,11 @@ import EraserTour from ':gif/eraserTour.gif';
 import CursorTour from ':gif/cursorTour.gif';
 import TextTour from ':gif/textTour.gif';
 
-import { Tour } from 'antd';
-import type { TourProps } from 'antd';
+import { TourProps, Popover, Tour } from 'antd';
 
 import styles from './styles.module.scss';
+import { CanvasBrushMenu } from ':components/CanvasBrushMenu/CanvasBrushMenu';
+import { CanvasFileUpload } from ':components/CanvasFileUpload/CanvasFileUpload';
 
 interface ToolbarProps {
 	isDrawing: boolean;
@@ -33,7 +35,7 @@ interface ToolbarProps {
 	onUndo: () => void;
 	onRedo: () => void;
 	onToggleDrag: () => void;
-	onShowFileDrawer: () => void;
+	onShowFileDrawer: (file: File) => void;
 	onShowAIDrawer: () => void;
 }
 
@@ -195,14 +197,19 @@ export const Toolbar: FC<ToolbarProps> = ({
 				<div className={styles.toolbarContentWrap}>
 					<div className={styles.toolbarContentBorder}>
 						<div className={styles.toolbarContent}>
-							<button
-								ref={refPen}
-								className={clsx(styles.toolbar__button, isDrawing && styles.selected)}
-								onClick={onToggleDraw}
-								title="Карандаш"
+							<Popover
+								content={<CanvasBrushMenu onToggleDraw={onToggleDraw} />}
+								trigger={'click'}
 							>
-								<img className={styles.toolbar__icon} src={BrushIcon} />
-							</button>
+								<button
+									ref={refPen}
+									className={clsx(styles.toolbar__button, isDrawing && styles.selected)}
+									onClick={onToggleDraw}
+									title="Карандаш"
+								>
+									<img className={styles.toolbar__icon} src={BrushIcon} />
+								</button>
+							</Popover>
 							<button
 								ref={refEraser}
 								className={clsx(styles.toolbar__button, isErasing && styles.selected)}
@@ -232,7 +239,7 @@ export const Toolbar: FC<ToolbarProps> = ({
 								onClick={onToggleDrag}
 								title="Ладонь"
 							>
-								<img className={styles.toolbar__icon} src={BrushIcon} />
+								<img className={styles.toolbar__icon} src={PanIcon} />
 							</button>
 							<button
 								ref={refUndo}
@@ -250,14 +257,15 @@ export const Toolbar: FC<ToolbarProps> = ({
 							>
 								<img className={styles.toolbar__icon} src={RedoIcon} />
 							</button>
-							<button
-								ref={refUpload}
-								className={styles.toolbar__button}
-								onClick={onSave}
-								title="Загрузить файл"
-							>
-								<img className={styles.toolbar__icon} src={UploadIcon} />
-							</button>
+							<Popover content={<CanvasFileUpload onImageUpload={onSave} />} trigger={'hover'}>
+								<button
+									ref={refUpload}
+									className={styles.toolbar__button}
+									title="Загрузить файл"
+								>
+									<img className={styles.toolbar__icon} src={UploadIcon} />
+								</button>
+							</Popover>
 							<button
 								ref={refAI}
 								className={styles.toolbar__button}

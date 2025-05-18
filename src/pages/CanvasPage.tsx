@@ -1,25 +1,40 @@
 import { ProtectedLayout } from ':components';
 import { FabricCanvas } from '../components/FabricCanvas/FabricCanvas';
 import { useParams } from 'react-router-dom';
-import { CanvasData, getAllCanvases } from ':api/api';
-import { useQuery } from '@tanstack/react-query';
+import { CanvasDataFull, getCanvasById } from ':api/api';
 import { CanvasHeader } from ':components/CanvasHeader/CanvasHeader';
 import { message } from 'antd';
 import { saveCanvasExternal } from ':lib';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const CanvasPage: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
-
+	const [canvas, setCanvas] = useState<CanvasDataFull | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 	const [messageApi, contextHolder] = message.useMessage();
 
-	const { data, isLoading, error } = useQuery<CanvasData[]>({
-		queryKey: ['canvasesAll', id],
-		queryFn: () => getAllCanvases({}),
-	});
+	useEffect(() => {
+		const fetchCanvas = async () => {
+			if (!id) return;
+
+			setIsLoading(true);
+			try {
+				const canvasData = await getCanvasById(id);
+				setCanvas(canvasData);
+				setError(null);
+			} catch (err: any) {
+				setError(err.message || 'Ошибка при загрузке канваса');
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchCanvas();
+	}, [id]);
 
 	useEffect(() => {
-		if (!data || !id) return;
+		if (!canvas || !id) return;
 
 		const intervalId = setInterval(async () => {
 			const key = 'canvas-save-status';
@@ -50,7 +65,7 @@ const CanvasPage: React.FC = () => {
 		}, 60000);
 
 		return () => clearInterval(intervalId);
-	}, [data, id, messageApi]);
+	}, [canvas, id, messageApi]);
 
 	useEffect(() => {
 		const handleLeave = async () => {
@@ -61,9 +76,7 @@ const CanvasPage: React.FC = () => {
 	}, []);
 
 	if (isLoading) return <div>Загрузка...</div>;
-	if (error) return <div>Ошибка: {(error as Error).message}</div>;
-	const canvas = data && data.find((c) => id && c.id === +id);
-
+	if (error) return <div>Ошибка: {error}</div>;
 	if (!canvas) return <div>Лист не найден</div>;
 
 	return (

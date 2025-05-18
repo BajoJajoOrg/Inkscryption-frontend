@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as fabric from 'fabric';
 import { TCanvasMode } from './types';
-import AIIcon from ':svg/icons/ai.svg';
+import AIIcon from ':svg/icons/ai_b.svg';
 import EraserIcon from ':svg/icons/eraser_b.svg?raw';
 import PenIcon from ':svg/icons/pen_b.svg?raw';
 import TextIcon from ':svg/icons/text_b.svg?raw';
+import RotateIcon from ':svg/icons/rotate_b.svg?raw';
 import { textToImage } from ':api/api';
 import { saveHistoryExternal } from './canvasHistory';
 
@@ -15,6 +16,11 @@ function svgCursorStringify(svg: string, hotspotX = 0, hotspotY = 16): string {
 	const cleaned = svg.replace(/\n/g, '').replace(/"/g, "'").trim();
 	return `url("data:image/svg+xml;utf8,${cleaned}") ${hotspotX} ${hotspotY}, auto`;
 }
+
+export const BRUSH_SETTINGS = {
+	BRUSH_WIDTH: 3,
+	BRUSH_COLOR: '#000000',
+};
 
 export function applyCanvasMode(
 	canvas: fabric.Canvas,
@@ -47,7 +53,9 @@ export function applyCanvasMode(
 		canvas.isDrawingMode = false;
 		canvas.selection = true;
 		canvas.skipTargetFind = false;
-		canvas.getObjects().forEach((obj) => (obj.selectable = true));
+		canvas.getObjects().forEach((obj) => {
+			obj.selectable = true;
+		});
 		canvas.defaultCursor = 'default';
 		canvas.hoverCursor = 'move';
 	} else if (mode === 'drag') {
@@ -96,14 +104,13 @@ export function applyCanvasMode(
 	} else if (mode === 'draw') {
 		canvas.isDrawingMode = true;
 		canvas.selection = false;
-		canvas.skipTargetFind = false;
+		canvas.skipTargetFind = true;
 		canvas.getObjects().forEach((obj) => (obj.selectable = false));
 		const brush = new fabric.PencilBrush(canvas);
-		console.log(svgCursorStringify(PenIcon));
 		canvas.freeDrawingCursor = `${svgCursorStringify(PenIcon)}`;
 		canvas.defaultCursor = `${svgCursorStringify(PenIcon)}`;
-		brush.width = 3;
-		brush.color = '#000000';
+		brush.width = BRUSH_SETTINGS.BRUSH_WIDTH;
+		brush.color = BRUSH_SETTINGS.BRUSH_COLOR;
 		canvas.freeDrawingBrush = brush;
 	} else if (mode === 'erase') {
 		canvas.defaultCursor = `${svgCursorStringify(EraserIcon)}`;
@@ -145,7 +152,7 @@ export function applyCanvasMode(
 			if (mode !== 'text' || !event.pointer) return;
 
 			if (myx) {
-				const { x, y } = event.pointer;
+				const { x, y } = canvas.getPointer(event.e);
 
 				const textbox = new fabric.Textbox('', {
 					left: x,
@@ -160,6 +167,7 @@ export function applyCanvasMode(
 
 				canvas.add(textbox);
 				canvas.setActiveObject(textbox);
+				textbox.enterEditing();
 
 				myx = false;
 				canvas.requestRenderAll();
@@ -197,16 +205,12 @@ function renderIcon(
 		ctx.translate(left, top);
 		ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
 
-		// Draw rounded background rectangle
 		ctx.fillStyle = backgroundColor;
 		ctx.beginPath();
 
-		// Rounded rect helper
 		if (ctx.roundRect) {
-			// Supported in modern browsers
 			ctx.roundRect(-totalSize / 2, -totalSize / 2, totalSize, totalSize, borderRadius);
 		} else {
-			// Manual rounded rect fallback
 			const x = -totalSize / 2;
 			const y = -totalSize / 2;
 			const r = borderRadius;
@@ -241,35 +245,28 @@ export const addConvertTextControl = (textbox: any) => {
 		offsetX: 16,
 		cursorStyle: 'pointer',
 		mouseUpHandler: async () => {
-			const canvas = textbox.canvas;
-			const oldLeft = textbox.left;
-			const oldTop = textbox.top;
-			canvas.discardActiveObject();
-			canvas.remove(textbox);
-			canvas.selection = true;
-			canvas.skipTargetFind = false;
-			canvas.selectionFullyContained = false;
-
-			const json = await textToImage(textbox.text || '');
-			console.log(JSON.stringify(json));
-
-			const pathObjects = convertToPaths(json);
-
-			pathObjects.forEach((path) => {
-				path.set({ left: oldLeft, top: oldTop });
-				canvas.add(path);
-			});
-
-			const lastObject = canvas.getObjects().pop();
-
-			if (lastObject && lastObject.type === 'path') {
-				splitPathWhilePreservingPosition(lastObject as fabric.Path);
-			}
-
-			canvas.renderAll();
-
-			canvas.requestRenderAll();
-			saveHistoryExternal();
+			// const canvas = textbox.canvas;
+			// const oldLeft = textbox.left;
+			// const oldTop = textbox.top;
+			// canvas.discardActiveObject();
+			// canvas.remove(textbox);
+			// canvas.selection = true;
+			// canvas.skipTargetFind = false;
+			// canvas.selectionFullyContained = false;
+			// const json = await textToImage(textbox.text || '');
+			// // console.log(JSON.stringify(json));
+			// const pathObjects = convertToPaths(json);
+			// pathObjects.forEach((path) => {
+			// 	path.set({ left: oldLeft, top: oldTop });
+			// 	canvas.add(path);
+			// });
+			// const lastObject = canvas.getObjects().pop();
+			// if (lastObject && lastObject.type === 'path') {
+			// 	splitPathWhilePreservingPosition(lastObject as fabric.Path);
+			// }
+			// canvas.renderAll();
+			// canvas.requestRenderAll();
+			// saveHistoryExternal();
 		},
 		render: renderIcon(AIImg),
 		cornerSize: 24,
@@ -383,7 +380,7 @@ export const fromTextToObject = async (canvas, text, top, left) => {
 	canvas.selectionFullyContained = false;
 
 	const json = await textToImage(text || '');
-	console.log(JSON.stringify(json));
+	// console.log(JSON.stringify(json));
 
 	const pathObjects = convertToPaths(json);
 

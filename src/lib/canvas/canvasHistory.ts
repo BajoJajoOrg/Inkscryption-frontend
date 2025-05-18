@@ -1,4 +1,5 @@
 import * as fabric from 'fabric';
+import { addConvertTextControl } from './applyCanvasMode';
 
 export function saveCanvasState(canvas: fabric.Canvas): string {
 	return JSON.stringify(canvas.toJSON());
@@ -19,11 +20,9 @@ export function loadCanvasState(canvas: fabric.Canvas, json: string) {
 		return;
 	}
 	try {
-		canvas.loadFromJSON(json, () => {
+		canvas.loadFromJSON(json).then(() => {
 			canvas.getObjects().forEach((obj) => {
-				if (obj.type === 'textbox') {
-					obj.set('objectCaching', false);
-				}
+				addConvertTextControl(obj);
 				obj.setCoords();
 			});
 		});

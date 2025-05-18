@@ -35,7 +35,7 @@ export interface AuthResponse {
 	access_token: string;
 	email: string;
 	password: string;
-  }
+}
 
 export interface LoginCredentials {
 	email: string;
@@ -59,36 +59,36 @@ export const handleResponse = async (response: Response) => {
 export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
 	const authStore = useAuthStore.getState();
 	let token = authStore.accessToken;
-  
+
 	// Создаём объект заголовков с явной типизацией
 	const headers: Record<string, string> = {
-	  ...(typeof options.headers === 'object' &&
-	  !Array.isArray(options.headers) &&
-	  !(options.headers instanceof Headers)
-		? options.headers
-		: {}),
-	  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+		...(typeof options.headers === 'object' &&
+		!Array.isArray(options.headers) &&
+		!(options.headers instanceof Headers)
+			? options.headers
+			: {}),
+		...(token ? { Authorization: `Bearer ${token}` } : {}),
 	};
-  
+
 	// Для FormData не добавляем Content-Type
 	if (!(options.body instanceof FormData)) {
-	  headers['Content-Type'] = 'application/json';
+		headers['Content-Type'] = 'application/json';
 	}
-  
+
 	// Запрос
 	const response = await fetch(url, {
-	  ...options,
-	  headers,
+		...options,
+		headers,
 	});
-  
+
 	// Обработка 401
 	if (response.status === 401) {
-	  authStore.logout();
-	  throw new Error('Сессия истекла. Пожалуйста, войдите заново.');
+		authStore.logout();
+		throw new Error('Сессия истекла. Пожалуйста, войдите заново.');
 	}
-  
+
 	return response;
-  };
+};
 // Методы API
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
 	const response = await fetch(`https://auth.hooli-pishem.ru/login`, {
