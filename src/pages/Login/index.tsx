@@ -13,15 +13,11 @@ const LoginPage: React.FC = () => {
 	const mutation = useMutation({
 		mutationFn: login,
 		onSuccess: (data) => {
-			setAuth({
-				access_token: data.access_token,
-				id: data.id,
-				email: data.email,
-			  });
+			setAuth(data.access_token, data.refresh_token);
 			navigate('/');
 		},
 		onError: (error: ErrorResponse) => {
-			console.error('Ошибка входа:', error.message);
+			console.error('Ошибка регистрации:', error.message);
 		},
 	});
 

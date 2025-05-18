@@ -2,6 +2,36 @@ export const API_URL = import.meta.env.VITE_API_URL as string;
 
 import { useAuthStore } from ':store/authStore';
 
+export interface MoveItemParams {
+	id: number;
+	identity: 'canvas' | 'folder';
+	parent_id?: number;
+}
+
+export const moveItem = async (params: MoveItemParams): Promise<void> => {
+	console.log({ params });
+
+    const url = `${API_URL}/change-parent`
+    
+	const response = await fetchWithAuth(url, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(params),
+	});
+
+    if (!response.ok) {
+        try {
+          const error: ErrorResponse = await response.json();
+          console.error('[DEBUG] API error:', error);
+          throw new Error(error.message);
+        } catch {
+          console.error('[DEBUG] API error: Failed to parse response', response.status);
+          throw new Error(`Ошибка ${response.status}: Не удалось переместить элемент`);
+        }
+      }
+      console.log('[DEBUG] API success:', response.status);
+};
+
 // Интерфейсы
 export interface CanvasData {
 	id: number;
@@ -160,40 +190,52 @@ export const createCanvas = async (name: string, folderId?: number): Promise<Can
 	return handleResponse(response);
 };
 
-export const updateCanvas = async (id: string, data: any): Promise<CanvasData> => {
+export const updateCanvas = async (id: string,  data?: any, name?: string ): Promise<CanvasData> => {
 	try {
-		if (!data) {
-			throw new Error('Data is missing');
-		}
-
-		console.log('Data for update:', {
-			dataType: data instanceof Blob ? 'Blob' : typeof data,
-			...(data instanceof Blob ? { type: data.type, size: data.size } : {}),
+	  if (!data && !name) {
+		throw new Error('Data or name is missing');
+	  }
+  
+	  console.log('Data for update:', {
+		dataType: data ? (data instanceof Blob ? 'Blob' : typeof data) : 'none',
+		name: name,
+		...(data instanceof Blob ? { type: data.type, size: data.size } : {}),
+	  });
+  
+	  let response;
+	  if (name && !data) {
+		// Переименование: отправляем POST с { name }
+		response = await fetchWithAuth(`${API_URL}/canvas/${id}`, {
+		  method: 'POST',
+		  headers: { 'Content-Type': 'application/json' },
+		  body: JSON.stringify({ name: name }),
 		});
-
+	  } else {
+		// Обновление файла: отправляем FormData
 		const formData = new FormData();
 		formData.append('file', data);
-
+  
 		for (const [key, value] of formData.entries()) {
-			console.log('FormData entry:', {
-				key,
-				value: value instanceof Blob ? { type: value.type, size: value.size } : value,
-			});
+		  console.log('FormData entry:', {
+			key,
+			value: value instanceof Blob ? { type: value.type, size: value.size } : value,
+		  });
 		}
-
+  
 		console.log('Sending PUT request:', { url: `${API_URL}/canvas/${id}` });
-
-		const response = await fetchWithAuth(`${API_URL}/canvas/${id}`, {
-			method: 'PUT',
-			body: formData,
+  
+		response = await fetchWithAuth(`${API_URL}/canvas/${id}`, {
+		  method: 'PUT',
+		  body: formData,
 		});
-
-		return handleResponse(response);
+	  }
+  
+	  return handleResponse(response);
 	} catch (error: any) {
-		console.error('Failed to update canvas:', error.message || error);
-		throw new Error('Failed to update canvas');
+	  console.error('Failed to update canvas:', error.message || error);
+	  throw new Error('Failed to update canvas');
 	}
-};
+  };
 
 export const deleteCanvas = async (id: number): Promise<void> => {
 	const response = await fetchWithAuth(`${API_URL}/canvas/${id}`, { method: 'DELETE' });

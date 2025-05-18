@@ -69,3 +69,24 @@ export const deleteDirectory = async (directoryId: number): Promise<void> => {
 		throw errorData;
 	}
 };
+
+export const updateDirectory = async (id: number, name: string): Promise<DirectoryData> => {
+	try {
+	  if (!name.trim()) {
+		throw new Error('Name is missing');
+	  }
+  
+	  console.log('[DEBUG] Updating directory:', { id, name });
+  
+	  const response = await fetchWithAuth(`${API_URL}/folder/${id}`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ name }),
+	  });
+  
+	  return handleResponse(response);
+	} catch (error: any) {
+	  console.error('[DEBUG] Failed to update directory:', error.message || error);
+	  throw new Error('Failed to update directory');
+	}
+  };
