@@ -1,8 +1,11 @@
-import { API_URL, handleResponse } from './api';
+import { API_URL, handleResponse } from ":api";
 
 export interface AuthResponse {
+	id: string;
 	access_token: string;
-	refresh_token?: string; // Опционально
+	email: string;
+	password: string;
+	refresh_token?: string;
 }
 
 export interface LoginCredentials {
@@ -10,9 +13,8 @@ export interface LoginCredentials {
 	password: string;
 }
 
-// Вход
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-	const response = await fetch(`${API_URL}/auth/login`, {
+	const response = await fetch(`https://auth.hooli-pishem.ru/login`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -23,7 +25,18 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
 	return handleResponse(response);
 };
 
-// Обновление токена
+export const register = async (credentials: LoginCredentials): Promise<AuthResponse> => {
+	const response = await fetch(`https://auth.hooli-pishem.ru/register`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(credentials),
+	});
+
+	return handleResponse(response);
+};
+
 export const refreshToken = async (refreshToken: string): Promise<AuthResponse> => {
 	const response = await fetch(`${API_URL}/auth/refresh`, {
 		method: 'POST',

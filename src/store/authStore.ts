@@ -1,49 +1,38 @@
 import { create } from 'zustand';
-import { queryClient } from '../constants';
+import { jwtDecode, JwtPayload } from 'jwt-decode';
 
 interface AuthState {
   accessToken: string | null;
+  refreshToken: string | null;
   user: { id: string; email: string } | null;
-  setAuth: (data: { access_token: string; id: string; email: string }) => void;
+  setAuth: (accessToken: string, refreshToken?: string) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   accessToken: localStorage.getItem('access_token') || null,
-  user: localStorage.getItem('user')
-    ? JSON.parse(localStorage.getItem('user')!)
-    : null,
-  setAuth: (data) => {
-    const currentEmail = localStorage.getItem('user')
-      ? JSON.parse(localStorage.getItem('user')!).email
-      : null;
+  refreshToken: localStorage.getItem('refresh_token') || null,
+  user: null,
+  setAuth: (accessToken, refreshToken) => {
+    localStorage.setItem('access_token', accessToken);
+    if (refreshToken) localStorage.setItem('refresh_token', refreshToken);
 
-    // Если email изменился, очищаем кэш
-    if (currentEmail && currentEmail !== data.email) {
-      queryClient.clear();
-    }
-
-    localStorage.setItem('access_token', data.access_token);
-    localStorage.setItem('user', JSON.stringify({ id: data.id, email: data.email }));
-    set({
-      accessToken: data.access_token,
-      user: { id: data.id, email: data.email },
-    });
+    const decoded = jwtDecode<{ id: string; email: string }>(accessToken);
+    set({ accessToken, refreshToken, user: { id: decoded.id, email: decoded.email } });
   },
   logout: () => {
     localStorage.removeItem('access_token');
-    localStorage.removeItem('user');
-    queryClient.clear();
-    set({ accessToken: null, user: null });
+    localStorage.removeItem('refresh_token');
+    set({ accessToken: null, refreshToken: null, user: null });
   },
   isAuthenticated: () => {
     const token = localStorage.getItem('access_token');
     if (!token) return false;
 
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const isExpired = payload.exp ? payload.exp * 1000 < Date.now() : true;
+      const decoded = jwtDecode<JwtPayload>(token);
+      const isExpired = decoded.exp ? decoded.exp * 1000 < Date.now() : true;
       return !isExpired;
     } catch {
       return false;
