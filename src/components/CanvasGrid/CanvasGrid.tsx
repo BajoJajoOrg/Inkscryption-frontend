@@ -371,27 +371,6 @@ const CanvasGrid: React.FC<CanvasGridProps> = memo(({ content, directoryId }) =>
     setIsRenaming(null);
   };
 
-  const handleMassDelete = () => {
-    if (selectedItems.length === 0) return;
-    Modal.confirm({
-      title: 'Подтверждение удаления',
-      content: `Вы уверены, что хотите удалить ${selectedItems.length} элемент(ов)?`,
-      okText: 'Удалить',
-      cancelText: 'Отмена',
-      okButtonProps: { danger: true },
-      onOk: () => {
-        selectedItems.forEach((item) => {
-          if (item.type === 'folder') {
-            deleteDirectoryMutation.mutate(item.id);
-          } else {
-            deleteCanvasMutation.mutate(item.id);
-          }
-        });
-        setSelectedItems([]);
-      },
-    });
-  };
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === 'n' && !e.shiftKey) {
@@ -410,13 +389,6 @@ const CanvasGrid: React.FC<CanvasGridProps> = memo(({ content, directoryId }) =>
   return (
     <DndProvider backend={HTML5Backend}>
       <div className={styles.gridContainer}>
-        {selectedItems.length > 0 && (
-          <div className={styles.controls}>
-            <Button danger onClick={handleMassDelete}>
-              Удалить выбранные ({selectedItems.length})
-            </Button>
-          </div>
-        )}
 
         <div onClick={handleAddCanvas} className={styles.newCanvasContainer}>
           <span>+ Новый лист</span>

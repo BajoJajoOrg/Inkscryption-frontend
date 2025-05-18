@@ -56,7 +56,8 @@ const CanvasFilter: React.FC<CanvasFilterProps> = memo(
 					}
 					onChange={handleDateChange}
 					format="DD.MM.YYYY"
-					style={{ width: 300 }}
+					style={{ width: 400 }}
+					placeholder={['Введите дату начала', 'Введите дату конца']}
 				/>
 			</div>
 		);
