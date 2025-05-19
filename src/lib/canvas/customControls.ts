@@ -1,5 +1,6 @@
 import AIIcon from ':svg/icons/ai_b.svg';
 import * as fabric from 'fabric';
+import { convertImage, convertText } from './convertText';
 const AIImg = document.createElement('img');
 AIImg.src = AIIcon;
 
@@ -69,9 +70,23 @@ export const addCustomControl = (object: any, onClick: () => void, image: HTMLIm
 };
 
 export const addConvertTextControl = (object: fabric.FabricObject) => {
-	addCustomControl(object, () => console.log('text convert'), AIImg);
+	addCustomControl(
+		object,
+		() => {
+			console.log('text convert');
+			convertText(object);
+		},
+		AIImg
+	);
 };
 
 export const addConvertImageControl = (object: fabric.FabricObject) => {
-	addCustomControl(object, () => console.log('image convert'), AIImg);
+	addCustomControl(
+		object,
+		() => {
+			console.log('image convert');
+			convertImage(object);
+		},
+		AIImg
+	);
 };
