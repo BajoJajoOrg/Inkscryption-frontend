@@ -6,7 +6,7 @@ import EraserIcon from ':svg/icons/eraser_b.svg?raw';
 import PenIcon from ':svg/icons/pen_b.svg?raw';
 import TextIcon from ':svg/icons/text_b.svg?raw';
 import RotateIcon from ':svg/icons/rotate_b.svg?raw';
-import { textToImage } from ':api/api';
+import { textToImage } from ':api';
 import { saveHistoryExternal } from './canvasHistory';
 
 const AIImg = document.createElement('img');
@@ -21,6 +21,9 @@ export const BRUSH_SETTINGS = {
 	BRUSH_WIDTH: 3,
 	BRUSH_COLOR: '#000000',
 };
+
+let virtualHeight: number | null = null;
+let virtualWidth: number | null = null;
 
 export function applyCanvasMode(
 	canvas: fabric.Canvas,
@@ -37,13 +40,17 @@ export function applyCanvasMode(
 	canvas.forEachObject(function (o) {
 		o.selectable = true;
 	});
+	if (!virtualHeight || !virtualWidth) {
+		virtualWidth = canvas.getWidth();
+		virtualHeight = canvas.getHeight();
+	}
 
 	canvas.on('mouse:wheel', function (opt) {
 		const delta = opt.e.deltaY;
 		let zoom = canvas.getZoom();
 		zoom *= 0.999 ** delta;
 		if (zoom > 20) zoom = 20;
-		if (zoom < 0.01) zoom = 0.01;
+		if (zoom < 1) zoom = 1;
 		canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
 		opt.e.preventDefault();
 		opt.e.stopPropagation();
@@ -86,8 +93,27 @@ export function applyCanvasMode(
 				canvas.upperCanvasEl.style.cursor = 'grabbing';
 				const e = opt.e;
 				const vpt = this.viewportTransform;
-				vpt[4] += e.clientX - this.lastPosX;
-				vpt[5] += e.clientY - this.lastPosY;
+				const zoom = canvas.getZoom();
+
+				const dx = e.clientX - this.lastPosX;
+				const dy = e.clientY - this.lastPosY;
+
+				vpt[4] += dx;
+				vpt[5] += dy;
+
+				// Get visible canvas dimensions
+				const canvasWidth = canvas.getWidth();
+				const canvasHeight = canvas.getHeight();
+
+				// Calculate limits in transformed (screen) coordinates
+				const minX = canvasWidth - virtualWidth * zoom;
+				const minY = canvasHeight - virtualHeight * zoom;
+				const maxX = 0;
+				const maxY = 0;
+
+				// Clamp translation
+				vpt[4] = Math.min(maxX, Math.max(minX, vpt[4]));
+				vpt[5] = Math.min(maxY, Math.max(minY, vpt[5]));
 				this.requestRenderAll();
 				this.lastPosX = e.clientX;
 				this.lastPosY = e.clientY;

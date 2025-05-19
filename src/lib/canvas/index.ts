@@ -5,3 +5,4 @@ export * from './canvasHistory';
 export * from './initCanvas';
 export * from './pointerTracking';
 export * from './types';
+export * from './exportCanvas';

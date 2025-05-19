@@ -1,5 +1,5 @@
 import * as fabric from 'fabric';
-import { getOcr } from '../../api/api';
+import { getOcr } from ':api';
 
 export async function extractTextFromCanvas(canvas: fabric.Canvas, id: string): Promise<string> {
 	const blob = await canvas.toBlob({ format: 'png', multiplier: 0.2 });

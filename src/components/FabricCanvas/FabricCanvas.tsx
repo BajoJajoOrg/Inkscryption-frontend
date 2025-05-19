@@ -17,12 +17,20 @@ import {
 	setCanvasRef,
 	setSaveCanvasExternal,
 	setExtractTextExternal,
+	exportCanvasAsJPEG,
+	exportCanvasAsPDF,
+	exportCanvasAsPNG,
+	exportCanvasAsSVG,
 } from ':lib/canvas';
 import { useParams } from 'react-router-dom';
-import { getCanvasById, updateCanvas } from ':api/api';
+import { getCanvasById, updateCanvas } from ':api';
 import { CanvasTextDrawer } from ':components/CanvasTextDrawer/CanvasTextDrawer';
 
-export const FabricCanvas = () => {
+type FabricCanvasProps = {
+	name?: string;
+};
+
+export const FabricCanvas = ({ name }: FabricCanvasProps) => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const fabricRef = useRef<fabric.Canvas | null>(null);
 	const initializedRef = useRef(false);
@@ -299,7 +307,11 @@ export const FabricCanvas = () => {
 					toggleMode('drag');
 					applyCurrentMode();
 				}}
-				onShowFileDrawer={(file: File) => handleUpload(file)}
+				onExportPng={() => exportCanvasAsPNG(fabricRef.current!, name!)}
+				onExportJpeg={() => exportCanvasAsJPEG(fabricRef.current!, name!)}
+				onExportSvg={() => exportCanvasAsSVG(fabricRef.current!, name!)}
+				onExportPdf={() => exportCanvasAsPDF(fabricRef.current!, name!)}
+				onUpload={(file: File) => handleUpload(file)}
 				onShowAIDrawer={showTD}
 			/>
 			{TextDrawer}
