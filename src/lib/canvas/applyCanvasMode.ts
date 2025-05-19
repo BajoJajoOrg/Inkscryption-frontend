@@ -1,16 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as fabric from 'fabric';
 import { TCanvasMode } from './types';
-import AIIcon from ':svg/icons/ai_b.svg';
 import EraserIcon from ':svg/icons/eraser_b.svg?raw';
 import PenIcon from ':svg/icons/pen_b.svg?raw';
 import TextIcon from ':svg/icons/text_b.svg?raw';
-import RotateIcon from ':svg/icons/rotate_b.svg?raw';
 import { textToImage } from ':api';
 import { saveHistoryExternal } from './canvasHistory';
-
-const AIImg = document.createElement('img');
-AIImg.src = AIIcon;
+import { addConvertTextControl } from './customControls';
 
 function svgCursorStringify(svg: string, hotspotX = 0, hotspotY = 16): string {
 	const cleaned = svg.replace(/\n/g, '').replace(/"/g, "'").trim();
@@ -211,94 +207,6 @@ export function applyCanvasMode(
 	}
 }
 
-function renderIcon(
-	icon: HTMLImageElement,
-	backgroundColor = 'rgba(0, 0, 0, 0.85)',
-	padding = 5,
-	borderRadius = 8
-) {
-	return function (
-		ctx: CanvasRenderingContext2D,
-		left: number,
-		top: number,
-		_styleOverride: any,
-		fabricObject: fabric.Object
-	) {
-		const size = this.cornerSize;
-		const totalSize = size + padding * 2;
-
-		ctx.save();
-		ctx.translate(left, top);
-		ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
-
-		ctx.fillStyle = backgroundColor;
-		ctx.beginPath();
-
-		if (ctx.roundRect) {
-			ctx.roundRect(-totalSize / 2, -totalSize / 2, totalSize, totalSize, borderRadius);
-		} else {
-			const x = -totalSize / 2;
-			const y = -totalSize / 2;
-			const r = borderRadius;
-			const w = totalSize;
-			const h = totalSize;
-
-			ctx.moveTo(x + r, y);
-			ctx.lineTo(x + w - r, y);
-			ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-			ctx.lineTo(x + w, y + h - r);
-			ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-			ctx.lineTo(x + r, y + h);
-			ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-			ctx.lineTo(x, y + r);
-			ctx.quadraticCurveTo(x, y, x + r, y);
-		}
-
-		ctx.fill();
-
-		// Draw icon image centered with padding
-		ctx.drawImage(icon, -size / 2, -size / 2, size, size);
-
-		ctx.restore();
-	};
-}
-
-export const addConvertTextControl = (textbox: any) => {
-	textbox.controls.convertControl = new fabric.Control({
-		x: 0.5,
-		y: -0.5,
-		offsetY: -16,
-		offsetX: 16,
-		cursorStyle: 'pointer',
-		mouseUpHandler: async () => {
-			// const canvas = textbox.canvas;
-			// const oldLeft = textbox.left;
-			// const oldTop = textbox.top;
-			// canvas.discardActiveObject();
-			// canvas.remove(textbox);
-			// canvas.selection = true;
-			// canvas.skipTargetFind = false;
-			// canvas.selectionFullyContained = false;
-			// const json = await textToImage(textbox.text || '');
-			// // console.log(JSON.stringify(json));
-			// const pathObjects = convertToPaths(json);
-			// pathObjects.forEach((path) => {
-			// 	path.set({ left: oldLeft, top: oldTop });
-			// 	canvas.add(path);
-			// });
-			// const lastObject = canvas.getObjects().pop();
-			// if (lastObject && lastObject.type === 'path') {
-			// 	splitPathWhilePreservingPosition(lastObject as fabric.Path);
-			// }
-			// canvas.renderAll();
-			// canvas.requestRenderAll();
-			// saveHistoryExternal();
-		},
-		render: renderIcon(AIImg),
-		cornerSize: 24,
-	});
-};
-
 function convertToPaths(json) {
 	const { paths } = json;
 	const fabricPaths = [];
@@ -427,7 +335,7 @@ export const fromTextToObject = async (canvas, text, top, left) => {
 	saveHistoryExternal();
 };
 
-export let canvasRef;
+export let canvasRef: any;
 export const setCanvasRef = (ref) => {
 	canvasRef = ref;
 };

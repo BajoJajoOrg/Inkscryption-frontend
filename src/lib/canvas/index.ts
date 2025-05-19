@@ -6,3 +6,4 @@ export * from './initCanvas';
 export * from './pointerTracking';
 export * from './types';
 export * from './exportCanvas';
+export * from './customControls';
