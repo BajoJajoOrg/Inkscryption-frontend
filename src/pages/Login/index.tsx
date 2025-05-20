@@ -3,21 +3,33 @@ import { useNavigate } from 'react-router-dom';
 import { ErrorResponse, login } from ':api';
 import { useAuthStore } from ':store';
 import { Form, Input, Button, Alert, Layout } from 'antd';
-
+import { useState } from 'react';
 import styles from './styles.module.scss';
 import { Link } from 'react-router-dom';
 
 const LoginPage: React.FC = () => {
 	const navigate = useNavigate();
 	const setAuth = useAuthStore((state) => state.setAuth);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
 	const mutation = useMutation({
 		mutationFn: login,
 		onSuccess: (data) => {
+			setErrorMessage(null);
 			setAuth(data.access_token, data.refresh_token);
 			navigate('/');
 		},
 		onError: (error: ErrorResponse) => {
-			console.error('Ошибка регистрации:', error.message);
+			console.error('Ошибка входа:', error.error);
+			const errorMessages: Record<string, string> = {
+				'wrong password': 'Неверный пароль. Пожалуйста, проверьте введенные данные.',
+				'failed to get user': 'Пользователь с таким email не найден.',
+				'user not found': 'Пользователь с таким email не найден.',
+			};
+
+			setErrorMessage(
+				errorMessages[error.error] || 'Произошла неизвестная ошибка при входе. Попробуйте снова.'
+			);
 		},
 	});
 
@@ -33,18 +45,17 @@ const LoginPage: React.FC = () => {
 		>
 			<div className={styles.root}>
 				<span className={styles.header}>Вход</span>
-				{/* <Button type="primary" size="large" block onClick={handleLogin}>
-					Войти (тестовый режим)
-				</Button> */}
 				<Form
 					className={styles.form}
 					name="login"
 					initialValues={{ remember: true }}
-					onFinish={(values) => mutation.mutate({ email: values.email, password: values.password })}
+					onFinish={(values) => {
+						setErrorMessage(null); // Сбрасываем ошибку перед новой попыткой
+						mutation.mutate({ email: values.email, password: values.password });
+					}}
 				>
 					<Form.Item
 						name="email"
-						// style={{ textAlign: 'center', fontFamily: 'Postironic-Hill' }}
 						className={styles.customItem}
 						rules={[
 							{ required: true, message: 'Введите email!' },
@@ -73,12 +84,14 @@ const LoginPage: React.FC = () => {
 							{mutation.isPending ? 'Вход...' : 'Войти'}
 						</Button>
 					</Form.Item>
-					{mutation.isError && (
+					{errorMessage && (
 						<Alert
 							message="Ошибка входа"
-							description={(mutation.error as ErrorResponse).message}
+							description={errorMessage}
 							type="error"
 							showIcon
+							closable
+							onClose={() => setErrorMessage(null)}
 						/>
 					)}
 					<p className={styles.footer}>

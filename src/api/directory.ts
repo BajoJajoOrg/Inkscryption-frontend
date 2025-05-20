@@ -56,6 +56,7 @@ export const createDirectory = async (name: string, parentId?: number): Promise<
 
 // Удаление директории
 export const deleteDirectory = async (directoryId: number): Promise<void> => {
+	console.log({directoryId})
 	const response = await fetchWithAuth(`${API_URL}/folder/${directoryId}`, {
 		method: 'DELETE',
 	});

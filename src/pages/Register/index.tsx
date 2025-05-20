@@ -5,10 +5,13 @@ import { useAuthStore } from ':store';
 import { Form, Input, Button, Alert, Layout } from 'antd';
 import styles from '../Login/styles.module.scss';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 
 const RegisterPage: React.FC = () => {
 	const navigate = useNavigate();
 	const setAuth = useAuthStore((state) => state.setAuth);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
 	const mutation = useMutation({
 		mutationFn: register,
 		onSuccess: (data) => {
@@ -17,6 +20,14 @@ const RegisterPage: React.FC = () => {
 		},
 		onError: (error: ErrorResponse) => {
 			console.error('Ошибка регистрации:', error.message);
+			const errorMessages: Record<string, string> = {
+				'email already exists': 'Пользователь с таким email уже существует.',
+				'failed to get user': 'Ошибка сервера. Пожалуйста, попробуйте позже.',
+			};
+
+			setErrorMessage(
+				errorMessages[error.error] || 'Произошла неизвестная ошибка при входе. Попробуйте снова.'
+			);
 		},
 	});
 
@@ -32,9 +43,6 @@ const RegisterPage: React.FC = () => {
 		>
 			<div className={styles.root}>
 				<span className={styles.header}>Регистрация</span>
-				{/* <Button type="primary" size="large" block onClick={handleLogin}>
-					Войти (тестовый режим)
-				</Button> */}
 				<Form
 					className={styles.form}
 					name="login"
@@ -43,7 +51,6 @@ const RegisterPage: React.FC = () => {
 				>
 					<Form.Item
 						name="email"
-						// style={{ textAlign: 'center', fontFamily: 'Postironic-Hill' }}
 						className={styles.customItem}
 						rules={[
 							{ required: true, message: 'Введите email!' },
@@ -75,9 +82,11 @@ const RegisterPage: React.FC = () => {
 					{mutation.isError && (
 						<Alert
 							message="Ошибка регистрации"
-							description={(mutation.error as ErrorResponse).message}
+							description={errorMessage}
 							type="error"
 							showIcon
+							closable
+							onClose={() => setErrorMessage(null)}
 						/>
 					)}
 					<p className={styles.footer}>
