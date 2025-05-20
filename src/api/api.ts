@@ -9,27 +9,25 @@ export interface MoveItemParams {
 }
 
 export const moveItem = async (params: MoveItemParams): Promise<void> => {
-	console.log({ params });
 
-    const url = `${API_URL}/change-parent`
-    
+	const url = `${API_URL}/change-parent`;
+
 	const response = await fetchWithAuth(url, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(params),
 	});
 
-    if (!response.ok) {
-        try {
-          const error: ErrorResponse = await response.json();
-          console.error('[DEBUG] API error:', error);
-          throw new Error(error.message);
-        } catch {
-          console.error('[DEBUG] API error: Failed to parse response', response.status);
-          throw new Error(`Ошибка ${response.status}: Не удалось переместить элемент`);
-        }
-      }
-      console.log('[DEBUG] API success:', response.status);
+	if (!response.ok) {
+		try {
+			const error: ErrorResponse = await response.json();
+			console.error('[DEBUG] API error:', error);
+			throw new Error(error.message);
+		} catch {
+			console.error('[DEBUG] API error: Failed to parse response', response.status);
+			throw new Error(`Ошибка ${response.status}: Не удалось переместить элемент`);
+		}
+	}
 };
 
 // Интерфейсы
@@ -57,12 +55,15 @@ export interface TextToImageResponse {
 export interface ErrorResponse {
 	code: number;
 	message: string;
+	status?: string;
+	error?: string;
 	details?: any;
 }
 
 export interface AuthResponse {
 	id: string;
 	access_token: string;
+	refresh_token: string;
 	email: string;
 	password: string;
 }
@@ -75,21 +76,32 @@ export interface LoginCredentials {
 // Вспомогательная функция для обработки ответа
 export const handleResponse = async (response: Response) => {
 	if (!response.ok) {
-		const errorData: ErrorResponse = await response.json().catch(() => ({
-			code: response.status,
-			message: response.statusText,
-		}));
-		console.error('API error:', errorData);
+		let errorData: ErrorResponse;
+		try {
+			errorData = await response.json();
+		} catch (e) {
+			errorData = { code: response.status, message: response.statusText };
+		}
+		console.error('[DEBUG] API error:', errorData);
 		throw errorData;
 	}
-	return response.json();
+	try {
+		const data = await response.json();
+		return data;
+	} catch (e) {
+		console.error('[DEBUG] Failed to parse response as JSON:', e);
+		throw new Error('Invalid server response');
+	}
 };
 
 // Обёртка для запросов с авторизацией
 export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
 	const authStore = useAuthStore.getState();
 	let token = authStore.accessToken;
-
+	if (!token) {
+		console.error('[DEBUG] No access token available');
+		throw new Error('No access token available. Please log in.');
+	}
 	// Создаём объект заголовков с явной типизацией
 	const headers: Record<string, string> = {
 		...(typeof options.headers === 'object' &&
@@ -165,11 +177,9 @@ export const getAllCanvases = async ({
 	if (created_at) params.append('created_at', created_at);
 
 	const url = `${API_URL}/canvas?${params.toString()}`;
-	console.log('Requesting URL:', url);
 
 	const response = await fetchWithAuth(url, { method: 'GET' });
 	const data = await handleResponse(response);
-	console.log('API response:', data);
 	return data;
 };
 
@@ -190,52 +200,37 @@ export const createCanvas = async (name: string, folderId?: number): Promise<Can
 	return handleResponse(response);
 };
 
-export const updateCanvas = async (id: string,  data?: any, name?: string ): Promise<CanvasData> => {
+export const updateCanvas = async (id: string, data?: any, name?: string): Promise<CanvasData> => {
 	try {
-	  if (!data && !name) {
-		throw new Error('Data or name is missing');
-	  }
-  
-	  console.log('Data for update:', {
-		dataType: data ? (data instanceof Blob ? 'Blob' : typeof data) : 'none',
-		name: name,
-		...(data instanceof Blob ? { type: data.type, size: data.size } : {}),
-	  });
-  
-	  let response;
-	  if (name && !data) {
-		// Переименование: отправляем POST с { name }
-		response = await fetchWithAuth(`${API_URL}/canvas/${id}`, {
-		  method: 'POST',
-		  headers: { 'Content-Type': 'application/json' },
-		  body: JSON.stringify({ name: name }),
-		});
-	  } else {
-		// Обновление файла: отправляем FormData
-		const formData = new FormData();
-		formData.append('file', data);
-  
-		for (const [key, value] of formData.entries()) {
-		  console.log('FormData entry:', {
-			key,
-			value: value instanceof Blob ? { type: value.type, size: value.size } : value,
-		  });
+		if (!data && !name) {
+			throw new Error('Data or name is missing');
 		}
-  
-		console.log('Sending PUT request:', { url: `${API_URL}/canvas/${id}` });
-  
-		response = await fetchWithAuth(`${API_URL}/canvas/${id}`, {
-		  method: 'PUT',
-		  body: formData,
-		});
-	  }
-  
-	  return handleResponse(response);
+
+		let response;
+		if (name && !data) {
+			// Переименование: отправляем POST с { name }
+			response = await fetchWithAuth(`${API_URL}/canvas/${id}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ name: name }),
+			});
+		} else {
+			// Обновление файла: отправляем FormData
+			const formData = new FormData();
+			formData.append('file', data);
+
+			response = await fetchWithAuth(`${API_URL}/canvas/${id}`, {
+				method: 'PUT',
+				body: formData,
+			});
+		}
+
+		return handleResponse(response);
 	} catch (error: any) {
-	  console.error('Failed to update canvas:', error.message || error);
-	  throw new Error('Failed to update canvas');
+		console.error('Failed to update canvas:', error.message || error);
+		throw new Error('Failed to update canvas');
 	}
-  };
+};
 
 export const deleteCanvas = async (id: number): Promise<void> => {
 	const response = await fetchWithAuth(`${API_URL}/canvas/${id}`, { method: 'DELETE' });
@@ -254,13 +249,6 @@ export const getOcr = async (image: File, id: string): Promise<OcrResponse> => {
 	const formData = new FormData();
 	formData.append('file', image);
 	formData.append('id', id);
-
-	for (const [key, value] of formData.entries()) {
-		console.log('FormData entry:', {
-			key,
-			value: value instanceof Blob ? { type: value.type, size: value.size } : value,
-		});
-	}
 
 	const response = await fetchWithAuth(`${API_URL}/ml/image-to-text`, {
 		method: 'POST',
