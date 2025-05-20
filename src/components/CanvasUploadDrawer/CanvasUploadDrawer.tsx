@@ -1,7 +1,7 @@
 import React, { JSX, useState } from 'react';
 import { Button, Drawer, Upload, UploadProps } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
-import { getOcr } from ':api/api';
+import { getOcr } from ':api';
 import { useParams } from 'react-router-dom';
 import { canvasRef, fromTextToObject } from ':lib';
 

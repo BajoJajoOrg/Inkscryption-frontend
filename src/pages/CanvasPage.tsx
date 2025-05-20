@@ -1,7 +1,7 @@
 import { ProtectedLayout } from ':components';
 import { FabricCanvas } from '../components/FabricCanvas/FabricCanvas';
 import { useParams } from 'react-router-dom';
-import { CanvasDataFull, getCanvasById } from ':api/api';
+import { CanvasDataFull, getCanvasById } from ':api';
 import { CanvasHeader } from ':components/CanvasHeader/CanvasHeader';
 import { message } from 'antd';
 import { saveCanvasExternal } from ':lib';
@@ -82,7 +82,7 @@ const CanvasPage: React.FC = () => {
 	return (
 		<ProtectedLayout>
 			<CanvasHeader title={canvas.name} />
-			<FabricCanvas />
+			<FabricCanvas name={canvas.name} />
 			{contextHolder}
 		</ProtectedLayout>
 	);

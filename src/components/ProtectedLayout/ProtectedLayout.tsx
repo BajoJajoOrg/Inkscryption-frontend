@@ -1,6 +1,6 @@
 import { Layout, Breadcrumb } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CanvasData } from ':api/api';
+import { CanvasData } from ':api';
 import styles from './styles.module.scss';
 import { memo, useMemo } from 'react';
 
@@ -11,7 +11,6 @@ interface ProtectedLayoutProps {
 }
 
 const ProtectedLayout: React.FC<ProtectedLayoutProps> = memo(({ children }) => {
-
 	return (
 		<Layout className={location.pathname.startsWith('/canvas/') ? styles.canvasRoot : styles.root}>
 			<Content

@@ -7,6 +7,7 @@ import UndoIcon from ':svg/icons/undo.svg';
 import RedoIcon from ':svg/icons/redo.svg';
 import AIIcon from ':svg/icons/ai_b.svg';
 import UploadIcon from ':svg/icons/upload.svg';
+import ExportIcon from ':svg/icons/export.svg';
 import TourIcon from ':svg/icons/tour.svg';
 import PanIcon from ':svg/icons/pan_b.svg';
 import clsx from 'clsx';
@@ -16,11 +17,12 @@ import EraserTour from ':gif/eraserTour.gif';
 import CursorTour from ':gif/cursorTour.gif';
 import TextTour from ':gif/textTour.gif';
 
-import { TourProps, Popover, Tour } from 'antd';
+import { TourProps, Popover, Tour, Tooltip } from 'antd';
 
 import styles from './styles.module.scss';
 import { CanvasBrushMenu } from ':components/CanvasBrushMenu/CanvasBrushMenu';
 import { CanvasFileUpload } from ':components/CanvasFileUpload/CanvasFileUpload';
+import { CanvasExportPopover } from ':components/CanvasExport/CanvasExport';
 
 interface ToolbarProps {
 	isDrawing: boolean;
@@ -35,7 +37,11 @@ interface ToolbarProps {
 	onUndo: () => void;
 	onRedo: () => void;
 	onToggleDrag: () => void;
-	onShowFileDrawer: (file: File) => void;
+	onUpload: (file: File) => void;
+	onExportPng: () => void;
+	onExportJpeg: () => void;
+	onExportSvg: () => void;
+	onExportPdf: () => void;
 	onShowAIDrawer: () => void;
 }
 
@@ -52,7 +58,11 @@ export const Toolbar: FC<ToolbarProps> = ({
 	onUndo,
 	onRedo,
 	onToggleDrag,
-	onShowFileDrawer: onSave,
+	onExportPng,
+	onExportJpeg,
+	onExportSvg,
+	onExportPdf,
+	onUpload,
 	onShowAIDrawer: onExtractText,
 }) => {
 	const refPen = useRef(null);
@@ -64,6 +74,8 @@ export const Toolbar: FC<ToolbarProps> = ({
 	const refAI = useRef(null);
 	const refText = useRef(null);
 	const refTour = useRef(null);
+	const refGrab = useRef(null);
+	const refExport = useRef(null);
 
 	const [open, setOpen] = useState<boolean>(false);
 
@@ -122,6 +134,18 @@ export const Toolbar: FC<ToolbarProps> = ({
 			cover: <img alt="Текст.gif" src={TextTour} />,
 		},
 		{
+			title: 'Ладонь',
+			description: 'Выберите, чтобы перемещаться по канвасу.',
+			target: () => refGrab.current,
+			nextButtonProps: {
+				children: 'Продолжить',
+				className: styles.tourBtn,
+			},
+			prevButtonProps: {
+				children: 'Назад',
+			},
+		},
+		{
 			title: 'Кнопка отмена',
 			description: 'Нажмите, чтобы отменить последнее действие.',
 			target: () => refUndo.current,
@@ -149,6 +173,18 @@ export const Toolbar: FC<ToolbarProps> = ({
 			title: 'Загрузка файла',
 			description: 'Нажмите, чтобы загрузить файл и преобразовать содержимое в рукописный текст.',
 			target: () => refUpload.current,
+			nextButtonProps: {
+				children: 'Продолжить',
+				className: styles.tourBtn,
+			},
+			prevButtonProps: {
+				children: 'Назад',
+			},
+		},
+		{
+			title: 'Экспорт канваса',
+			description: 'Нажмите и выберите нужный тип файла для экспорта.',
+			target: () => refExport.current,
 			nextButtonProps: {
 				children: 'Продолжить',
 				className: styles.tourBtn,
@@ -201,87 +237,132 @@ export const Toolbar: FC<ToolbarProps> = ({
 								content={<CanvasBrushMenu onToggleDraw={onToggleDraw} />}
 								trigger={'click'}
 							>
-								<button
-									ref={refPen}
-									className={clsx(styles.toolbar__button, isDrawing && styles.selected)}
-									onClick={onToggleDraw}
-									title="Карандаш"
-								>
-									<img className={styles.toolbar__icon} src={BrushIcon} />
-								</button>
+								<Tooltip placement="bottom" title={'Карандаш'}>
+									<button
+										ref={refPen}
+										className={clsx(styles.toolbar__button, isDrawing && styles.selected)}
+										onClick={onToggleDraw}
+										title="Карандаш"
+									>
+										<img className={styles.toolbar__icon} src={BrushIcon} />
+									</button>
+								</Tooltip>
 							</Popover>
-							<button
-								ref={refEraser}
-								className={clsx(styles.toolbar__button, isErasing && styles.selected)}
-								onClick={onToggleErase}
-								title="Ластик"
-							>
-								<img className={styles.toolbar__icon} src={EraserIcon} />
-							</button>
-							<button
-								ref={refCursor}
-								className={clsx(styles.toolbar__button, isSelecting && styles.selected)}
-								onClick={onToggleSelect}
-								title="Курсор"
-							>
-								<img className={styles.toolbar__icon} src={MoveIcon} />
-							</button>
-							<button
-								ref={refText}
-								className={clsx(styles.toolbar__button, isTextMode && styles.selected)}
-								onClick={onToggleText}
-								title="Текст"
-							>
-								<img className={styles.toolbar__icon} src={TextIcon} />
-							</button>
-							<button
-								className={clsx(styles.toolbar__button, isDragging && styles.selected)}
-								onClick={onToggleDrag}
-								title="Ладонь"
-							>
-								<img className={styles.toolbar__icon} src={PanIcon} />
-							</button>
-							<button
-								ref={refUndo}
-								className={styles.toolbar__button}
-								onClick={onUndo}
-								title="Отменить"
-							>
-								<img className={styles.toolbar__icon} src={UndoIcon} />
-							</button>
-							<button
-								ref={refRedo}
-								className={styles.toolbar__button}
-								onClick={onRedo}
-								title="Повторить"
-							>
-								<img className={styles.toolbar__icon} src={RedoIcon} />
-							</button>
-							<Popover content={<CanvasFileUpload onImageUpload={onSave} />} trigger={'hover'}>
+							<Tooltip placement="bottom" title={'Ластик'}>
 								<button
-									ref={refUpload}
+									ref={refEraser}
+									className={clsx(styles.toolbar__button, isErasing && styles.selected)}
+									onClick={onToggleErase}
+									title="Ластик"
+								>
+									<img className={styles.toolbar__icon} src={EraserIcon} />
+								</button>
+							</Tooltip>
+							<Tooltip placement="bottom" title={'Курсор'}>
+								<button
+									ref={refCursor}
+									className={clsx(styles.toolbar__button, isSelecting && styles.selected)}
+									onClick={onToggleSelect}
+									title="Курсор"
+								>
+									<img className={styles.toolbar__icon} src={MoveIcon} />
+								</button>
+							</Tooltip>
+							<Tooltip placement="bottom" title={'Текст'}>
+								<button
+									ref={refText}
+									className={clsx(styles.toolbar__button, isTextMode && styles.selected)}
+									onClick={onToggleText}
+									title="Текст"
+								>
+									<img className={styles.toolbar__icon} src={TextIcon} />
+								</button>
+							</Tooltip>
+							<Tooltip placement="bottom" title={'Перемещение'}>
+								<button
+									ref={refGrab}
+									className={clsx(styles.toolbar__button, isDragging && styles.selected)}
+									onClick={onToggleDrag}
+									title="Ладонь"
+								>
+									<img className={styles.toolbar__icon} src={PanIcon} />
+								</button>
+							</Tooltip>
+							<Tooltip placement="bottom" title={'Отменить'}>
+								<button
+									ref={refUndo}
 									className={styles.toolbar__button}
-									title="Загрузить файл"
+									onClick={onUndo}
+									title="Отменить"
 								>
-									<img className={styles.toolbar__icon} src={UploadIcon} />
+									<img className={styles.toolbar__icon} src={UndoIcon} />
 								</button>
+							</Tooltip>
+							<Tooltip placement="bottom" title={'Повторить'}>
+								<button
+									ref={refRedo}
+									className={styles.toolbar__button}
+									onClick={onRedo}
+									title="Повторить"
+								>
+									<img className={styles.toolbar__icon} src={RedoIcon} />
+								</button>
+							</Tooltip>
+							<Popover
+								content={<CanvasFileUpload onImageUpload={onUpload} />}
+								trigger={'hover'}
+							>
+								<Tooltip placement="bottom" title={'Импорт'}>
+									<button
+										ref={refUpload}
+										className={styles.toolbar__button}
+										title="Загрузить файл"
+									>
+										<img className={styles.toolbar__icon} src={UploadIcon} />
+									</button>
+								</Tooltip>
 							</Popover>
-							<button
-								ref={refAI}
-								className={styles.toolbar__button}
-								onClick={onExtractText}
-								title="Извлечение текста"
+							<Popover
+								content={
+									<CanvasExportPopover
+										onExportPNG={onExportPng}
+										onExportJPEG={onExportJpeg}
+										onExportSVG={onExportSvg}
+										onExportPDF={onExportPdf}
+									/>
+								}
+								trigger={'hover'}
 							>
-								<img className={styles.toolbar__icon} src={AIIcon} />
-							</button>
-							<button
-								ref={refTour}
-								className={styles.toolbar__button}
-								onClick={() => setOpen(true)}
-								title="Обучение"
-							>
-								<img className={styles.toolbar__icon} src={TourIcon} />
-							</button>
+								<Tooltip placement="bottom" title={'Экспорт'}>
+									<button
+										ref={refExport}
+										className={styles.toolbar__button}
+										title="Экспортировать"
+									>
+										<img className={styles.toolbar__icon} src={ExportIcon} />
+									</button>
+								</Tooltip>
+							</Popover>
+							<Tooltip placement="bottom" title={'Извлечь текст'}>
+								<button
+									ref={refAI}
+									className={styles.toolbar__button}
+									onClick={onExtractText}
+									title="Извлечение текста"
+								>
+									<img className={styles.toolbar__icon} src={AIIcon} />
+								</button>
+							</Tooltip>
+							<Tooltip placement="bottom" title={'Обучение'}>
+								<button
+									ref={refTour}
+									className={styles.toolbar__button}
+									onClick={() => setOpen(true)}
+									title="Обучение"
+								>
+									<img className={styles.toolbar__icon} src={TourIcon} />
+								</button>
+							</Tooltip>
 						</div>
 					</div>
 				</div>
