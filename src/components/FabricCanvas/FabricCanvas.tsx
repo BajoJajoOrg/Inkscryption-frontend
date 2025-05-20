@@ -1,4 +1,3 @@
-// components/FabricCanvas.tsx
 import { useRef, useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import * as fabric from 'fabric';
 import styles from './styles.module.scss';
@@ -21,6 +20,7 @@ import {
 	exportCanvasAsPDF,
 	exportCanvasAsPNG,
 	exportCanvasAsSVG,
+	addConvertTextControl,
 } from ':lib/canvas';
 import { useParams } from 'react-router-dom';
 import { getCanvasById, updateCanvas } from ':api';
@@ -173,6 +173,72 @@ export const FabricCanvas = ({ name }: FabricCanvasProps) => {
 		localStorage.setItem('aitext', extracted);
 	}, [id, handleSaveCanvas]);
 
+	const handleRecordAudio = useCallback(
+		async (file: File) => {
+			const formData = new FormData();
+			formData.append('audio_file', file);
+			try {
+				const response = await fetch('https://sound.hooli-pishem.ru/predict', {
+					method: 'POST',
+					body: formData,
+				});
+				const result = await response.json();
+				console.log('Ответ сервера:', result);
+				const canvas = fabricRef.current;
+				if (!canvas) return;
+
+				// Переключаем в режим text
+				toggleMode('text');
+				applyCurrentMode();
+
+				// Создаем Textbox с текстом из ответа
+				const textbox = new fabric.Textbox(result.text || 'Текст не получен', {
+					left: 100, // Фиксированные координаты, можно настроить
+					top: 100,
+					fontSize: 24,
+					fill: '#000000',
+					editable: true,
+					fontFamily: 'Verdana',
+					width: 200,
+				});
+				addConvertTextControl(textbox);
+
+				canvas.add(textbox);
+				canvas.setActiveObject(textbox);
+				textbox.enterEditing();
+				canvas.requestRenderAll();
+				saveHistory();
+			} catch (error) {
+				console.error('Ошибка при обработке аудио:', error);
+				const canvas = fabricRef.current;
+				if (!canvas) return;
+
+				// Переключаем в режим text
+				toggleMode('text');
+				applyCurrentMode();
+
+				// Создаем Textbox с сообщением об ошибке
+				const textbox = new fabric.Textbox('Ошибка при обработке аудио', {
+					left: 100,
+					top: 100,
+					fontSize: 24,
+					fill: '#000000',
+					editable: true,
+					fontFamily: 'Verdana',
+					width: 200,
+				});
+				addConvertTextControl(textbox);
+
+				canvas.add(textbox);
+				canvas.setActiveObject(textbox);
+				textbox.enterEditing();
+				canvas.requestRenderAll();
+				saveHistory();
+			}
+		},
+		[applyCurrentMode, saveHistory]
+	);
+
 	const toggleMode = (mode: TCanvasMode) => {
 		setMode(mode);
 		modeRef.current = mode;
@@ -228,6 +294,7 @@ export const FabricCanvas = ({ name }: FabricCanvasProps) => {
 					addImage(file, fabricRef.current);
 				}}
 				onShowAIDrawer={showTD}
+				onRecordAudio={handleRecordAudio}
 			/>
 			{TextDrawer}
 			<div ref={containerRef} className={styles.canvasWrap}>
