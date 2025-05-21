@@ -17,7 +17,7 @@ import {
 import styles from './styles.module.scss';
 import NoteIcon from ':svg/note.svg?react';
 import FolderIcon from ':svg/icons/folder.svg?react';
-import { Button, Input, message, Modal, Dropdown, MenuProps, notification, Spin } from 'antd';
+import { Button, Input, message, Modal, Dropdown, MenuProps, notification, Spin, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -127,9 +127,11 @@ const DirectoryDropZone: React.FC<{
 	}));
 
 	return (
-		<div ref={drop} className={`${styles.dropZone} ${isOver ? styles.dropZoneActive : ''}`}>
-			{children}
-		</div>
+		<Tooltip title={`Переместить в "${directory.name}"`} visible={isOver}>
+			<div ref={drop} className={`${styles.dropZone} ${isOver ? styles.dropZoneActive : ''}`}>
+				{children}
+			</div>
+		</Tooltip>
 	);
 };
 
@@ -266,6 +268,16 @@ const CanvasGrid: React.FC<CanvasGridProps> = memo(({ content, directoryId }) =>
 		mutationFn: ({ id, name }: { id: string; name: string }) => updateCanvas(id, undefined, name),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['directory'] });
+			queryClient.refetchQueries({ queryKey: ['directory'] });
+			queryClient.setQueryData(['directory', directoryId], (oldData: DirectoryContent | undefined) => {
+				if (!oldData) return oldData;
+				return {
+					...oldData,
+					canvases: oldData.canvases.map((canvas) =>
+						canvas.id === Number(id) ? { ...canvas, name } : canvas
+					),
+				};
+			});
 			notification.success({
 				message: 'Лист переименован',
 				description: 'Название листа успешно обновлено.',
@@ -288,6 +300,16 @@ const CanvasGrid: React.FC<CanvasGridProps> = memo(({ content, directoryId }) =>
 		mutationFn: ({ id, name }: { id: number; name: string }) => updateDirectory(id, name),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['directory'] });
+			queryClient.refetchQueries({ queryKey: ['directory'] });
+			queryClient.setQueryData(['directory', directoryId], (oldData: DirectoryContent | undefined) => {
+				if (!oldData) return oldData;
+				return {
+					...oldData,
+					directories: oldData.directories.map((directory) =>
+						directory.id === id ? { ...directory, name } : directory
+					),
+				};
+			});
 			notification.success({
 				message: 'Директория переименована',
 				description: 'Название директории успешно обновлено.',
@@ -344,6 +366,18 @@ const CanvasGrid: React.FC<CanvasGridProps> = memo(({ content, directoryId }) =>
 
 	const handleCreateDirectory = () => {
 		if (validateTitle(newDirectoryTitle)) {
+			directoryMutation.mutate(newDirectoryTitle);
+		}
+	};
+
+	const handleCanvasInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === 'Enter' && validateTitle(newCanvasTitle)) {
+			canvasMutation.mutate(newCanvasTitle);
+		}
+	};
+
+	const handleDirectoryInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === 'Enter' && validateTitle(newDirectoryTitle)) {
 			directoryMutation.mutate(newDirectoryTitle);
 		}
 	};
@@ -445,13 +479,6 @@ const CanvasGrid: React.FC<CanvasGridProps> = memo(({ content, directoryId }) =>
 	return (
 		<DndProvider backend={HTML5Backend}>
 			<div className={styles.gridContainer}>
-				{selectedItems.length > 0 && (
-					<div className={styles.controls}>
-						<Button danger onClick={handleMassDelete}>
-							Удалить выбранные ({selectedItems.length})
-						</Button>
-					</div>
-				)}
 
 				<div onClick={handleAddCanvas} className={styles.newCanvasContainer}>
 					<span>+ Новый лист</span>
@@ -475,8 +502,10 @@ const CanvasGrid: React.FC<CanvasGridProps> = memo(({ content, directoryId }) =>
 					<Input
 						value={newCanvasTitle}
 						onChange={(e) => setNewCanvasTitle(e.target.value)}
+						onKeyDown={handleCanvasInputKeyDown}
 						placeholder="Введите название листа"
 						autoFocus
+						disabled={canvasMutation.isPending}
 					/>
 				</Modal>
 
@@ -495,8 +524,10 @@ const CanvasGrid: React.FC<CanvasGridProps> = memo(({ content, directoryId }) =>
 					<Input
 						value={newDirectoryTitle}
 						onChange={(e) => setNewDirectoryTitle(e.target.value)}
+						onKeyDown={handleDirectoryInputKeyDown}
 						placeholder="Введите название директории"
 						autoFocus
+						disabled={directoryMutation.isPending}
 					/>
 				</Modal>
 
@@ -530,86 +561,111 @@ const CanvasGrid: React.FC<CanvasGridProps> = memo(({ content, directoryId }) =>
 				</Modal>
 
 				{isRenaming && (
-					<div className={styles.canavsContainer}>
-						{isRenaming.type === 'folder' ? <FolderIcon /> : <NoteIcon />}
-						<Input
-							defaultValue={isRenaming.currentName}
-							onKeyDown={handleRenameSubmit}
-							placeholder="Введите новое название"
-							className={styles.titleInput}
-							autoFocus
-							suffix={
-								<Button type="text" size="small" onClick={handleCancelRename}>
-									Отмена
-								</Button>
-							}
-						/>
-						<span className={styles.date}>{new Date().toLocaleDateString('ru-RU')}</span>
-					</div>
+					<motion.div
+						key={`rename-${isRenaming.id}-${isRenaming.type}`}
+						variants={itemVariants}
+						initial="initial"
+						animate="animate"
+						exit="exit"
+						transition={{ duration: 0.2 }}
+					>
+						<div className={styles.canavsContainer}>
+							{isRenaming.type === 'folder' ? <FolderIcon /> : <NoteIcon />}
+							<Input
+								defaultValue={isRenaming.currentName}
+								onKeyDown={handleRenameSubmit}
+								placeholder="Введите новое название"
+								className={styles.titleInput}
+								autoFocus
+								disabled={
+									isRenaming.type === 'canvas'
+										? renameCanvasMutation.isPending
+										: renameDirectoryMutation.isPending
+								}
+								suffix={
+									<Button type="text" size="small" onClick={handleCancelRename}>
+										Отмена
+									</Button>
+								}
+							/>
+							<span className={styles.date}>{new Date().toLocaleDateString('ru-RU')}</span>
+						</div>
+					</motion.div>
 				)}
 
 				<AnimatePresence>
-					{content.directories.map((directory) => (
-						<motion.div
-							key={`dir-${directory.id}`}
-							variants={itemVariants}
-							initial="initial"
-							animate="animate"
-							exit="exit"
-							transition={{ duration: 0.2 }}
-						>
-							<DirectoryDropZone directory={directory} onDrop={handleDrop}>
+					{content.directories
+						.filter(
+							(directory) =>
+								!isRenaming || isRenaming.id !== directory.id || isRenaming.type !== 'folder'
+						)
+						.map((directory) => (
+							<motion.div
+								key={`dir-${directory.id}`}
+								variants={itemVariants}
+								initial="initial"
+								animate="animate"
+								exit="exit"
+								transition={{ duration: 0.2 }}
+							>
+								<DirectoryDropZone directory={directory} onDrop={handleDrop}>
+									<CanvasItem
+										item={directory}
+										isDirectory={true}
+										isSelected={selectedItems.some(
+											(item) => item.id === directory.id && item.type === 'folder'
+										)}
+										isMoving={
+											moveItemMutation.isPending &&
+											moveItemMutation.variables?.id === directory.id
+										}
+										isRenaming={
+											renameDirectoryMutation.isPending &&
+											renameDirectoryMutation.variables?.id === directory.id
+										}
+										onSelect={handleSelectItem}
+										onNavigate={navigate}
+										onDelete={handleDeleteItem}
+										onRename={handleRename}
+									/>
+								</DirectoryDropZone>
+							</motion.div>
+						))}
+					{content.canvases
+						.filter(
+							(canvas) =>
+								!isRenaming || isRenaming.id !== canvas.id || isRenaming.type !== 'canvas'
+						)
+						.map((canvas) => (
+							<motion.div
+								key={`canvas-${canvas.id}`}
+								variants={itemVariants}
+								initial="initial"
+								animate="animate"
+								exit="exit"
+								transition={{ duration: 0.2 }}
+							>
 								<CanvasItem
-									item={directory}
-									isDirectory={true}
+									item={canvas}
+									isDirectory={false}
 									isSelected={selectedItems.some(
-										(item) => item.id === directory.id && item.type === 'folder'
+										(item) => item.id === canvas.id && item.type === 'canvas'
 									)}
 									isMoving={
 										moveItemMutation.isPending &&
-										moveItemMutation.variables?.id === directory.id
+										moveItemMutation.variables?.id === canvas.id
 									}
 									isRenaming={
-										renameDirectoryMutation.isPending &&
-										renameDirectoryMutation.variables?.id === directory.id
+										renameCanvasMutation.isPending &&
+										renameCanvasMutation.variables?.id === canvas.id.toString()
 									}
 									onSelect={handleSelectItem}
 									onNavigate={navigate}
 									onDelete={handleDeleteItem}
 									onRename={handleRename}
 								/>
-							</DirectoryDropZone>
-						</motion.div>
-					))}
-					{content.canvases.map((canvas) => (
-						<motion.div
-							key={`canvas-${canvas.id}`}
-							variants={itemVariants}
-							initial="initial"
-							animate="animate"
-							exit="exit"
-							transition={{ duration: 0.2 }}
-						>
-							<CanvasItem
-								item={canvas}
-								isDirectory={false}
-								isSelected={selectedItems.some(
-									(item) => item.id === canvas.id && item.type === 'canvas'
-								)}
-								isMoving={
-									moveItemMutation.isPending && moveItemMutation.variables?.id === canvas.id
-								}
-								isRenaming={
-									renameCanvasMutation.isPending &&
-									renameCanvasMutation.variables?.id === canvas.id.toString()
-								}
-								onSelect={handleSelectItem}
-								onNavigate={navigate}
-								onDelete={handleDeleteItem}
-								onRename={handleRename}
-							/>
-						</motion.div>
-					))}
+							</motion.div>
+						))}
 				</AnimatePresence>
 			</div>
 		</DndProvider>

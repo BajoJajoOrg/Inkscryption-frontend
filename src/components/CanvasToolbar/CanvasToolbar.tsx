@@ -10,23 +10,22 @@ import UploadIcon from ':svg/icons/upload.svg';
 import ExportIcon from ':svg/icons/export.svg';
 import TourIcon from ':svg/icons/tour.svg';
 import PanIcon from ':svg/icons/pan_b.svg';
-// Временная замена для MicrophoneIcon, замените на :svg/icons/microphone.svg
-import MicrophoneIcon from ':svg/icons/pen.svg';
-import { Modal, Tour, Tooltip, Popover, Button } from 'antd';
+import MicrophoneIcon from ':svg/icons/microphone.svg';
+import { Modal, Tour, Tooltip, Popover, Button, Spin } from 'antd';
 import clsx from 'clsx';
 
 import PencilTour from ':gif/pencilTour.gif';
 import EraserTour from ':gif/eraserTour.gif';
 import CursorTour from ':gif/cursorTour.gif';
 import TextTour from ':gif/textTour.gif';
-// Временная замена для MicrophoneTour, замените на :gif/microphoneTour.gif
-import MicrophoneTour from ':gif/pencilTour.gif';
+import MicrophoneTour from ':gif/microphone.gif';
 
 import { TourProps } from 'antd';
 import styles from './styles.module.scss';
 import { CanvasBrushMenu } from ':components/CanvasBrushMenu/CanvasBrushMenu';
 import { CanvasFileUpload } from ':components/CanvasFileUpload/CanvasFileUpload';
 import { CanvasExportPopover } from ':components/CanvasExport/CanvasExport';
+import { fetchWithAuth, API_URL } from ':api';
 
 interface ToolbarProps {
 	isDrawing: boolean;
@@ -47,7 +46,7 @@ interface ToolbarProps {
 	onExportSvg: () => void;
 	onExportPdf: () => void;
 	onShowAIDrawer: () => void;
-	onRecordAudio: (file: File) => Promise<void>;
+	onRecordAudio: (file: File, text: string) => Promise<void>;
 }
 
 export const Toolbar: FC<ToolbarProps> = ({
@@ -89,6 +88,7 @@ export const Toolbar: FC<ToolbarProps> = ({
 	const [audioUrl, setAudioUrl] = useState<string | null>(null);
 	const [audioFile, setAudioFile] = useState<File | null>(null);
 	const [isRecording, setIsRecording] = useState(false);
+	const [isLoading, setIsLoading] = useState(false); // Новое состояние для загрузки
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 	const chunksRef = useRef<Blob[]>([]);
 
@@ -242,21 +242,28 @@ export const Toolbar: FC<ToolbarProps> = ({
 
 	const handleAudioUpload = async () => {
 		if (audioFile) {
+			setIsLoading(true); // Включаем лоадер
 			const formData = new FormData();
 			formData.append('audio_file', audioFile);
 			try {
-				const response = await fetch('https://sound.hooli-pishem.ru/predict/', {
+				const response = await fetchWithAuth(`${API_URL}/sound-predict/`, {
 					method: 'POST',
 					body: formData,
 				});
 				const result = await response.json();
 				console.log('Ответ сервера:', result);
-				await onRecordAudio(audioFile);
+				await onRecordAudio(audioFile, result.text || 'Текст не получен');
 				setModalOpen(false);
 				setAudioUrl(null);
 				setAudioFile(null);
 			} catch (error) {
 				console.error('Ошибка при загрузке:', error);
+				await onRecordAudio(audioFile, 'Ошибка при обработке аудио');
+				setModalOpen(false);
+				setAudioUrl(null);
+				setAudioFile(null);
+			} finally {
+				setIsLoading(false); // Выключаем лоадер
 			}
 		}
 	};
@@ -416,10 +423,12 @@ export const Toolbar: FC<ToolbarProps> = ({
 				title="Запись голоса"
 				open={modalOpen}
 				onCancel={() => {
-					stopRecording();
-					setModalOpen(false);
-					setAudioUrl(null);
-					setAudioFile(null);
+					if (!isLoading) {
+						stopRecording();
+						setModalOpen(false);
+						setAudioUrl(null);
+						setAudioFile(null);
+					}
 				}}
 				footer={[
 					<Button
@@ -430,26 +439,42 @@ export const Toolbar: FC<ToolbarProps> = ({
 							setAudioUrl(null);
 							setAudioFile(null);
 						}}
+						disabled={isLoading}
 					>
 						Отмена
 					</Button>,
-					<Button key="delete" onClick={deleteRecording} disabled={!audioFile}>
+					<Button key="delete" onClick={deleteRecording} disabled={!audioFile || isLoading}>
 						Удалить запись
 					</Button>,
-					<Button key="upload" type="primary" onClick={handleAudioUpload} disabled={!audioFile}>
+					<Button
+						key="upload"
+						type="primary"
+						onClick={handleAudioUpload}
+						disabled={!audioFile || isLoading}
+					>
 						Отправить
 					</Button>,
 				]}
 				className={styles.audioModal}
 			>
 				<div className={styles.audioRecorder}>
-					<Button type="primary" onClick={isRecording ? stopRecording : startRecording}>
+					<Button
+						type="primary"
+						onClick={isRecording ? stopRecording : startRecording}
+						disabled={isLoading}
+					>
 						{isRecording ? 'Остановить запись' : 'Начать запись'}
 					</Button>
 					{audioUrl && (
 						<div className={styles.audioPreview}>
 							<h3>Прослушать запись:</h3>
 							<audio src={audioUrl} controls />
+						</div>
+					)}
+					{isLoading && (
+						<div className={styles.loadingContainer}>
+							<Spin size="large" />
+							<p className={styles.loadingText}>Запрос обрабатывается...</p>
 						</div>
 					)}
 				</div>

@@ -174,67 +174,31 @@ export const FabricCanvas = ({ name }: FabricCanvasProps) => {
 	}, [id, handleSaveCanvas]);
 
 	const handleRecordAudio = useCallback(
-		async (file: File) => {
-			const formData = new FormData();
-			formData.append('audio_file', file);
-			try {
-				const response = await fetch('https://sound.hooli-pishem.ru/predict', {
-					method: 'POST',
-					body: formData,
-				});
-				const result = await response.json();
-				console.log('Ответ сервера:', result);
-				const canvas = fabricRef.current;
-				if (!canvas) return;
+		async (file: File, text: string) => {
+			const canvas = fabricRef.current;
+			if (!canvas) return;
 
-				// Переключаем в режим text
-				toggleMode('text');
-				applyCurrentMode();
+			// Переключаем в режим text
+			toggleMode('text');
+			applyCurrentMode();
 
-				// Создаем Textbox с текстом из ответа
-				const textbox = new fabric.Textbox(result.text || 'Текст не получен', {
-					left: 100, // Фиксированные координаты, можно настроить
-					top: 100,
-					fontSize: 24,
-					fill: '#000000',
-					editable: true,
-					fontFamily: 'Verdana',
-					width: 200,
-				});
-				addConvertTextControl(textbox);
+			// Создаем Textbox с текстом
+			const textbox = new fabric.Textbox(text, {
+				left: 100, // Фиксированные координаты, можно настроить
+				top: 100,
+				fontSize: 24,
+				fill: '#000000',
+				editable: true,
+				fontFamily: 'Verdana',
+				width: 200,
+			});
+			addConvertTextControl(textbox);
 
-				canvas.add(textbox);
-				canvas.setActiveObject(textbox);
-				textbox.enterEditing();
-				canvas.requestRenderAll();
-				saveHistory();
-			} catch (error) {
-				console.error('Ошибка при обработке аудио:', error);
-				const canvas = fabricRef.current;
-				if (!canvas) return;
-
-				// Переключаем в режим text
-				toggleMode('text');
-				applyCurrentMode();
-
-				// Создаем Textbox с сообщением об ошибке
-				const textbox = new fabric.Textbox('Ошибка при обработке аудио', {
-					left: 100,
-					top: 100,
-					fontSize: 24,
-					fill: '#000000',
-					editable: true,
-					fontFamily: 'Verdana',
-					width: 200,
-				});
-				addConvertTextControl(textbox);
-
-				canvas.add(textbox);
-				canvas.setActiveObject(textbox);
-				textbox.enterEditing();
-				canvas.requestRenderAll();
-				saveHistory();
-			}
+			canvas.add(textbox);
+			canvas.setActiveObject(textbox);
+			textbox.enterEditing();
+			canvas.requestRenderAll();
+			saveHistory();
 		},
 		[applyCurrentMode, saveHistory]
 	);
