@@ -81,7 +81,7 @@ const CanvasPage: React.FC = () => {
 
 	return (
 		<ProtectedLayout>
-			<CanvasHeader title={canvas.name} />
+			<CanvasHeader title={canvas.name} parent_id={canvas?.folder_id || 0} />
 			<FabricCanvas name={canvas.name} />
 			{contextHolder}
 		</ProtectedLayout>
