@@ -25,6 +25,8 @@
 			":svg": ["src/assets/svg"],
 			":gif/*": ["src/assets/gif/*"],
 			":gif": ["src/assets/gif"],
+			":png/*": ["src/assets/png/*"],
+			":png": ["src/assets/png"],
 			":utils": ["src/utils"],
 			":utils/*": ["src/utils/*"],
 			":modules": ["src/modules"],

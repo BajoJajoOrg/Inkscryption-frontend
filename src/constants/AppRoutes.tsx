@@ -6,6 +6,7 @@ import { JSX } from 'react';
 import { useAuthStore } from ':store';
 import LoginPage from ':pages/Login';
 import RegisterPage from ':pages/Register';
+import LandingPage from ':pages/Landing';
 
 interface ProtectedRouteProps {
 	children: JSX.Element;
@@ -24,6 +25,7 @@ const PrivateRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 const AppRoutes: React.FC = () => {
 	return (
 		<Routes>
+			<Route path="/landing" element={<LandingPage />} />
 			<Route path="/login" element={<LoginPage />} />
 			<Route path="/register" element={<RegisterPage />} />
 			<Route
