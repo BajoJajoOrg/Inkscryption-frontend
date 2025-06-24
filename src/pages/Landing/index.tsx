@@ -78,7 +78,7 @@ const FeatureBlock: React.FC = () => {
 
 const LandingPage: React.FC = () => {
 	return (
-		<div>
+		<div className={styles.scrollContainer}>
 			<Header />
 			<MainBlock />
 			<FeatureBlock />

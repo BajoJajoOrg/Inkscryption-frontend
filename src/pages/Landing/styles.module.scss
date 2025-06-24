@@ -29,7 +29,15 @@
 	gap: 10px;
 }
 
+.scrollContainer {
+	height: 100vh;
+	overflow-y: scroll;
+	scroll-snap-type: y mandatory;
+	scroll-behavior: smooth;
+}
+
 .mainBlock {
+	scroll-snap-align: start;
 	height: 100dvh;
 	width: 100dvw;
 	background-image: url(':png/background_1.webp');
@@ -41,14 +49,9 @@
 	justify-content: flex-end;
 }
 
-.mainImage {
-	width: max(70dvw, 80dvh);
-	position: relative;
-	bottom: 0;
-}
-
 .featureBlock {
-	height: auto;
+	scroll-snap-align: start;
+	min-height: 100dvh;
 	width: 100%;
 	background-image: url(':png/background_2.webp');
 	background-size: 100% 100%;
@@ -59,6 +62,12 @@
 	gap: 20px;
 	align-items: center;
 	justify-content: center;
+}
+
+.mainImage {
+	width: max(70dvw, 80dvh);
+	position: relative;
+	bottom: 0;
 }
 
 .featureHeader {
