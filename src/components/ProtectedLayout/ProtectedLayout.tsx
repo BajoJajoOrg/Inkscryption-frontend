@@ -1,8 +1,6 @@
-import { Layout, Breadcrumb } from 'antd';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { CanvasData } from ':api';
+import { Layout } from 'antd';
 import styles from './styles.module.scss';
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 
 const { Content } = Layout;
 

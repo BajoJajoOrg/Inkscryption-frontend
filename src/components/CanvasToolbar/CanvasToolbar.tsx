@@ -10,19 +10,22 @@ import UploadIcon from ':svg/icons/upload.svg';
 import ExportIcon from ':svg/icons/export.svg';
 import TourIcon from ':svg/icons/tour.svg';
 import PanIcon from ':svg/icons/pan_b.svg';
+import MicrophoneIcon from ':svg/icons/microphone.svg';
+import { Modal, Tour, Tooltip, Popover, Button, Spin } from 'antd';
 import clsx from 'clsx';
 
 import PencilTour from ':gif/pencilTour.gif';
 import EraserTour from ':gif/eraserTour.gif';
 import CursorTour from ':gif/cursorTour.gif';
 import TextTour from ':gif/textTour.gif';
+import MicrophoneTour from ':gif/microphone.gif';
 
-import { TourProps, Popover, Tour, Tooltip } from 'antd';
-
+import { TourProps } from 'antd';
 import styles from './styles.module.scss';
 import { CanvasBrushMenu } from ':components/CanvasBrushMenu/CanvasBrushMenu';
 import { CanvasFileUpload } from ':components/CanvasFileUpload/CanvasFileUpload';
 import { CanvasExportPopover } from ':components/CanvasExport/CanvasExport';
+import { fetchWithAuth, API_URL } from ':api';
 
 interface ToolbarProps {
 	isDrawing: boolean;
@@ -43,6 +46,7 @@ interface ToolbarProps {
 	onExportSvg: () => void;
 	onExportPdf: () => void;
 	onShowAIDrawer: () => void;
+	onRecordAudio: (file: File, text: string) => Promise<void>;
 }
 
 export const Toolbar: FC<ToolbarProps> = ({
@@ -58,12 +62,13 @@ export const Toolbar: FC<ToolbarProps> = ({
 	onUndo,
 	onRedo,
 	onToggleDrag,
+	onUpload,
 	onExportPng,
 	onExportJpeg,
 	onExportSvg,
 	onExportPdf,
-	onUpload,
-	onShowAIDrawer: onExtractText,
+	onShowAIDrawer,
+	onRecordAudio,
 }) => {
 	const refPen = useRef(null);
 	const refEraser = useRef(null);
@@ -76,47 +81,40 @@ export const Toolbar: FC<ToolbarProps> = ({
 	const refTour = useRef(null);
 	const refGrab = useRef(null);
 	const refExport = useRef(null);
+	const refMicrophone = useRef(null);
 
-	const [open, setOpen] = useState<boolean>(false);
+	const [tourOpen, setTourOpen] = useState<boolean>(false);
+	const [modalOpen, setModalOpen] = useState<boolean>(false);
+	const [audioUrl, setAudioUrl] = useState<string | null>(null);
+	const [audioFile, setAudioFile] = useState<File | null>(null);
+	const [isRecording, setIsRecording] = useState(false);
+	const [isLoading, setIsLoading] = useState(false); // Новое состояние для загрузки
+	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+	const chunksRef = useRef<Blob[]>([]);
 
 	const steps: TourProps['steps'] = [
 		{
 			title: 'Карандаш',
 			description: 'Выберите его чтобы начать рисовать на канвасе.',
 			target: () => refPen.current,
-			nextButtonProps: {
-				children: 'Продолжить',
-				className: styles.tourBtn,
-			},
-			prevButtonProps: {
-				children: 'Назад',
-			},
+			nextButtonProps: { children: 'Продолжить', className: styles.tourBtn },
+			prevButtonProps: { children: 'Назад' },
 			cover: <img alt="Карандаш.gif" src={PencilTour} />,
 		},
 		{
 			title: 'Ластик',
 			description: 'Выберите его чтобы начать стирать с канваса.',
 			target: () => refEraser.current,
-			nextButtonProps: {
-				children: 'Продолжить',
-				className: styles.tourBtn,
-			},
-			prevButtonProps: {
-				children: 'Назад',
-			},
+			nextButtonProps: { children: 'Продолжить', className: styles.tourBtn },
+			prevButtonProps: { children: 'Назад' },
 			cover: <img alt="Ластик.gif" src={EraserTour} />,
 		},
 		{
 			title: 'Курсор',
 			description: 'Выберите его, чтобы перемещать элементы канваса.',
 			target: () => refCursor.current,
-			nextButtonProps: {
-				children: 'Продолжить',
-				className: styles.tourBtn,
-			},
-			prevButtonProps: {
-				children: 'Назад',
-			},
+			nextButtonProps: { children: 'Продолжить', className: styles.tourBtn },
+			prevButtonProps: { children: 'Назад' },
 			cover: <img alt="Курсор.gif" src={CursorTour} />,
 		},
 		{
@@ -124,108 +122,151 @@ export const Toolbar: FC<ToolbarProps> = ({
 			description:
 				'Выберите его, чтобы добавить печатный текст на канвас. Чтобы преобразовать его в рукописный, нажмите на кнопку в верхнем правом углу текст-бокса.',
 			target: () => refText.current,
-			nextButtonProps: {
-				children: 'Продолжить',
-				className: styles.tourBtn,
-			},
-			prevButtonProps: {
-				children: 'Назад',
-			},
+			nextButtonProps: { children: 'Продолжить', className: styles.tourBtn },
+			prevButtonProps: { children: 'Назад' },
 			cover: <img alt="Текст.gif" src={TextTour} />,
 		},
 		{
 			title: 'Ладонь',
 			description: 'Выберите, чтобы перемещаться по канвасу.',
 			target: () => refGrab.current,
-			nextButtonProps: {
-				children: 'Продолжить',
-				className: styles.tourBtn,
-			},
-			prevButtonProps: {
-				children: 'Назад',
-			},
+			nextButtonProps: { children: 'Продолжить', className: styles.tourBtn },
+			prevButtonProps: { children: 'Назад' },
 		},
 		{
 			title: 'Кнопка отмена',
 			description: 'Нажмите, чтобы отменить последнее действие.',
 			target: () => refUndo.current,
-			nextButtonProps: {
-				children: 'Продолжить',
-				className: styles.tourBtn,
-			},
-			prevButtonProps: {
-				children: 'Назад',
-			},
+			nextButtonProps: { children: 'Продолжить', className: styles.tourBtn },
+			prevButtonProps: { children: 'Назад' },
 		},
 		{
 			title: 'Кнопка повторить',
 			description: 'Нажмите, чтобы повторить отмененное действие.',
 			target: () => refRedo.current,
-			nextButtonProps: {
-				children: 'Продолжить',
-				className: styles.tourBtn,
-			},
-			prevButtonProps: {
-				children: 'Назад',
-			},
+			nextButtonProps: { children: 'Продолжить', className: styles.tourBtn },
+			prevButtonProps: { children: 'Назад' },
 		},
 		{
 			title: 'Загрузка файла',
 			description: 'Нажмите, чтобы загрузить файл и преобразовать содержимое в рукописный текст.',
 			target: () => refUpload.current,
-			nextButtonProps: {
-				children: 'Продолжить',
-				className: styles.tourBtn,
-			},
-			prevButtonProps: {
-				children: 'Назад',
-			},
+			nextButtonProps: { children: 'Продолжить', className: styles.tourBtn },
+			prevButtonProps: { children: 'Назад' },
 		},
 		{
 			title: 'Экспорт канваса',
 			description: 'Нажмите и выберите нужный тип файла для экспорта.',
 			target: () => refExport.current,
-			nextButtonProps: {
-				children: 'Продолжить',
-				className: styles.tourBtn,
-			},
-			prevButtonProps: {
-				children: 'Назад',
-			},
+			nextButtonProps: { children: 'Продолжить', className: styles.tourBtn },
+			prevButtonProps: { children: 'Назад' },
 		},
 		{
 			title: 'Работа с текстом',
 			description: 'Нажмите, чтобы начать работу с текстом (преобразование в печатный и поиск).',
 			target: () => refAI.current,
-			nextButtonProps: {
-				children: 'Продолжить',
-				className: styles.tourBtn,
-			},
-			prevButtonProps: {
-				children: 'Назад',
-			},
+			nextButtonProps: { children: 'Продолжить', className: styles.tourBtn },
+			prevButtonProps: { children: 'Назад' },
+		},
+		{
+			title: 'Запись голоса',
+			description: 'Нажмите, чтобы открыть окно записи голоса и отправить аудио.',
+			target: () => refMicrophone.current,
+			nextButtonProps: { children: 'Продолжить', className: styles.tourBtn },
+			prevButtonProps: { children: 'Назад' },
+			cover: <img alt="Микрофон.gif" src={MicrophoneTour} />,
 		},
 		{
 			title: 'Обучение',
-			description: 'Если вдруг что-то забудете нажмите на эту кнопку, чтобы снова включить обучение',
+			description: 'Если вдруг что-то забудете, нажмите на эту кнопку, чтобы снова включить обучение.',
 			target: () => refTour.current,
-			nextButtonProps: {
-				children: 'Завершить',
-				className: styles.tourBtn,
-			},
-			prevButtonProps: {
-				children: 'Назад',
-			},
+			nextButtonProps: { children: 'Завершить', className: styles.tourBtn },
+			prevButtonProps: { children: 'Назад' },
 		},
 	];
 
 	useEffect(() => {
 		const tourStatus = localStorage.getItem('tourOpened');
 		if (!tourStatus) {
-			setOpen(true);
+			setTourOpen(true);
 			localStorage.setItem('tourOpened', 'true');
 		}
 	}, []);
+
+	const startRecording = async () => {
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			const mimeType = MediaRecorder.isTypeSupported('audio/wav') ? 'audio/wav' : 'audio/webm';
+			mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
+			chunksRef.current = [];
+
+			mediaRecorderRef.current.ondataavailable = (e) => {
+				if (e.data.size > 0) {
+					chunksRef.current.push(e.data);
+				}
+			};
+
+			mediaRecorderRef.current.onstop = () => {
+				const blob = new Blob(chunksRef.current, { type: mimeType });
+				const file = new File([blob], 'recording.wav', {
+					type: 'audio/wav',
+					lastModified: Date.now(),
+				});
+				setAudioUrl(URL.createObjectURL(blob));
+				setAudioFile(file);
+				stream.getTracks().forEach((track) => track.stop());
+			};
+
+			mediaRecorderRef.current.start();
+			setIsRecording(true);
+		} catch (error) {
+			console.error('Ошибка доступа к микрофону:', error);
+		}
+	};
+
+	const stopRecording = () => {
+		if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+			mediaRecorderRef.current.stop();
+			setIsRecording(false);
+		}
+	};
+
+	const deleteRecording = () => {
+		setAudioUrl(null);
+		setAudioFile(null);
+		if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+			mediaRecorderRef.current.stop();
+			setIsRecording(false);
+		}
+	};
+
+	const handleAudioUpload = async () => {
+		if (audioFile) {
+			setIsLoading(true); // Включаем лоадер
+			const formData = new FormData();
+			formData.append('audio_file', audioFile);
+			try {
+				const response = await fetchWithAuth(`${API_URL}/sound-predict/`, {
+					method: 'POST',
+					body: formData,
+				});
+				const result = await response.json();
+				console.log('Ответ сервера:', result);
+				await onRecordAudio(audioFile, result.text || 'Текст не получен');
+				setModalOpen(false);
+				setAudioUrl(null);
+				setAudioFile(null);
+			} catch (error) {
+				console.error('Ошибка при загрузке:', error);
+				await onRecordAudio(audioFile, 'Ошибка при обработке аудио');
+				setModalOpen(false);
+				setAudioUrl(null);
+				setAudioFile(null);
+			} finally {
+				setIsLoading(false); // Выключаем лоадер
+			}
+		}
+	};
 
 	return (
 		<>
@@ -347,17 +388,27 @@ export const Toolbar: FC<ToolbarProps> = ({
 								<button
 									ref={refAI}
 									className={styles.toolbar__button}
-									onClick={onExtractText}
+									onClick={onShowAIDrawer}
 									title="Извлечение текста"
 								>
 									<img className={styles.toolbar__icon} src={AIIcon} />
+								</button>
+							</Tooltip>
+							<Tooltip placement="bottom" title={'Запись голоса'}>
+								<button
+									ref={refMicrophone}
+									className={styles.toolbar__button}
+									onClick={() => setModalOpen(true)}
+									title="Запись голоса"
+								>
+									<img className={styles.toolbar__icon} src={MicrophoneIcon} />
 								</button>
 							</Tooltip>
 							<Tooltip placement="bottom" title={'Обучение'}>
 								<button
 									ref={refTour}
 									className={styles.toolbar__button}
-									onClick={() => setOpen(true)}
+									onClick={() => setTourOpen(true)}
 									title="Обучение"
 								>
 									<img className={styles.toolbar__icon} src={TourIcon} />
@@ -367,7 +418,67 @@ export const Toolbar: FC<ToolbarProps> = ({
 					</div>
 				</div>
 			</div>
-			<Tour open={open} onClose={() => setOpen(false)} steps={steps} />
+			<Tour open={tourOpen} onClose={() => setTourOpen(false)} steps={steps} />
+			<Modal
+				title="Запись голоса"
+				open={modalOpen}
+				onCancel={() => {
+					if (!isLoading) {
+						stopRecording();
+						setModalOpen(false);
+						setAudioUrl(null);
+						setAudioFile(null);
+					}
+				}}
+				footer={[
+					<Button
+						key="cancel"
+						onClick={() => {
+							stopRecording();
+							setModalOpen(false);
+							setAudioUrl(null);
+							setAudioFile(null);
+						}}
+						disabled={isLoading}
+					>
+						Отмена
+					</Button>,
+					<Button key="delete" onClick={deleteRecording} disabled={!audioFile || isLoading}>
+						Удалить запись
+					</Button>,
+					<Button
+						key="upload"
+						type="primary"
+						onClick={handleAudioUpload}
+						disabled={!audioFile || isLoading}
+					>
+						Отправить
+					</Button>,
+				]}
+				className={styles.audioModal}
+			>
+				<div className={styles.audioRecorder}>
+					<Button
+						type="primary"
+						onClick={isRecording ? stopRecording : startRecording}
+						disabled={isLoading}
+					>
+						{isRecording ? 'Остановить запись' : 'Начать запись'}
+					</Button>
+					{audioUrl && (
+						<div className={styles.audioPreview}>
+							<h3>Прослушать запись:</h3>
+							<audio src={audioUrl} controls />
+						</div>
+					)}
+					{isLoading && (
+						<div className={styles.loadingContainer}>
+							<Spin size="large" />
+							<p className={styles.loadingText}>Запрос обрабатывается...</p>
+						</div>
+					)}
+				</div>
+			</Modal>
 		</>
 	);
 };

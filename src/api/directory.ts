@@ -80,7 +80,7 @@ export const updateDirectory = async (id: number, name: string): Promise<Directo
 	  console.log('[DEBUG] Updating directory:', { id, name });
   
 	  const response = await fetchWithAuth(`${API_URL}/folder/${id}`, {
-		method: 'POST',
+		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ name }),
 	  });

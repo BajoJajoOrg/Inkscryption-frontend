@@ -74,3 +74,57 @@
 :global(.ant-tour-indicator-active) {
 	background-color: #262626 !important;
 }
+
+.audioModal {
+	.ant-modal-content {
+		padding: 20px;
+	}
+
+	.ant-modal-title {
+		font-size: 18px;
+		font-weight: bold;
+		color: #333;
+	}
+}
+
+.audioRecorder {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 20px;
+	padding: 20px 0;
+
+	.ant-btn {
+		margin: 10px;
+	}
+}
+
+.audioPreview {
+	margin-top: 20px;
+	text-align: center;
+
+	h3 {
+		font-size: 16px;
+		color: #333;
+		margin-bottom: 10px;
+	}
+
+	audio {
+		width: 100%;
+		max-width: 300px;
+	}
+}
+
+.loadingContainer {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	margin-top: 20px;
+}
+
+.loadingText {
+	font-size: 14px;
+	color: #555;
+	margin: 0;
+}

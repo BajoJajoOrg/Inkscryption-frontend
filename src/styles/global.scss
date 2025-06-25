@@ -21,7 +21,40 @@ body,
 	font-family: 'Postironic-Hill' !important;
 	font-weight: 400;
 	margin: 0;
-	overflow: hidden;
+	overflow: scroll;
+	background: radial-gradient(circle at center, #7f7f7f 0%, #1c1c1c 100%);
+}
+
+.custom-breadcrumb {
+	background: #4a4a4a; /* Серый фон, близкий к изображению */
+	border-radius: 8px; /* Скругленные углы */
+	padding: 4px 8px; /* Внутренние отступы для текста */
+	display: inline-flex; /* Горизонтальное расположение */
+	align-items: center;
+	gap: 8px; /* Расстояние между элементами */
+
+	span, a {
+		color: white;
+	}
+	position: absolute;
+	bottom: 0;
+}
+
+.custom-breadcrumb .ant-breadcrumb-separator {
+	color: #b0b0b0; /* Цвет разделителя ("/") */
+}
+
+.custom-breadcrumb .ant-breadcrumb-link a {
+	color: #b0b0b0 !important; /* Цвет ссылок, как на изображении */
+	text-decoration: none !important; /* Убираем подчеркивание */
+}
+
+.custom-breadcrumb .ant-breadcrumb-link a:hover {
+	color: #c0c0c0 !important; /* Легкий акцент при наведении */
+}
+
+.custom-breadcrumb .ant-breadcrumb-link span {
+	color: #b0b0b0 !important; /* Цвет текста для неактивных элементов */
 }
 
 // fonts
