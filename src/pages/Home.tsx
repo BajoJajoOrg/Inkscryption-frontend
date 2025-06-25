@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Breadcrumb, Button, Flex, Spin, Alert } from 'antd';
 import { useAuthStore } from ':store';
+import styles from ':pages/Landing/styles.module.scss';
 
 interface DirectoryContent {
 	folder: DirectoryData;
@@ -89,12 +90,14 @@ const Home: React.FC = () => {
 
 	return (
 		<ProtectedLayout>
-			<Flex justify="flex-end" align="end">
-				<Button size="large" onClick={handleLogout}>
+			<Flex justify="flex-end" align="end" style={{ marginTop: '20px' }}>
+				<Button className={styles.customButtonB} size="large" onClick={handleLogout}>
 					Выйти
 				</Button>
 			</Flex>
-			<h1 style={{color: 'white'}}>{content.folder && content.folder.name !== 'root' ? content.folder.name : 'Мои файлы'}</h1>
+			<h1 style={{ color: 'white', marginBottom: '10px' }}>
+				{content.folder && content.folder.name !== 'root' ? content.folder.name : 'Мои файлы'}
+			</h1>
 			<CanvasFilter
 				searchTitle={searchTitle}
 				setSearchTitle={setSearchTitle}

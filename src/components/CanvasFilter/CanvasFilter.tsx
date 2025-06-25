@@ -47,6 +47,7 @@ const CanvasFilter: React.FC<CanvasFilterProps> = memo(
 					value={inputValue}
 					onChange={handleInputChange}
 					style={{ width: 200 }}
+					className={styles.customInput}
 				/>
 				<RangePicker
 					value={
@@ -58,6 +59,7 @@ const CanvasFilter: React.FC<CanvasFilterProps> = memo(
 					format="DD.MM.YYYY"
 					style={{ width: 400 }}
 					placeholder={['Введите дату начала', 'Введите дату конца']}
+					className={styles.customInput}
 				/>
 			</div>
 		);

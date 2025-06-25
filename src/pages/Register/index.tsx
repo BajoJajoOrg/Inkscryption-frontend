@@ -57,7 +57,9 @@ const RegisterPage: React.FC = () => {
 							{ type: 'email', message: 'Некорректный email!' },
 						]}
 					>
-						<Input placeholder="Email" size="large" className={styles.customInput} />
+						<div className={styles.customInputWrapper}>
+							<Input placeholder="Email" size="large" className={styles.customInput} />
+						</div>
 					</Form.Item>
 					<Form.Item
 						name="password"

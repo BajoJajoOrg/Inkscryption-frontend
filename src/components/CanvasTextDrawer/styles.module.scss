@@ -1,0 +1,125 @@
+.modalWrapper {
+	font-family: 'Arial Narrow', sans-serif;
+
+	:global(.ant-modal-content) {
+		background-color: #3d3d3d;
+		border-radius: 16px;
+		border: 3px solid transparent;
+		background-image: linear-gradient(#3d3d3d, #3d3d3d),
+			linear-gradient(270.78deg, #cecece 1%, #686868 101.53%);
+		background-clip: padding-box, border-box;
+		background-origin: border-box;
+		color: white;
+	}
+
+	:global(.ant-modal-header) {
+		background: transparent;
+		border-bottom: none;
+		padding: 24px 0 0 0; // No left padding
+	}
+
+	:global(.ant-modal-title) {
+		color: white;
+		font-size: 24px;
+		font-weight: bold;
+		font-family: 'Arial-Narrow', sans-serif;
+		padding-left: 0;
+	}
+
+	:global(.ant-modal-close) {
+		color: #aaa;
+	}
+
+	:global(.ant-btn.customModalButton) {
+		all: unset;
+		display: inline-block;
+		cursor: pointer;
+		font: bold 1.1rem 'Arial Narrow', sans-serif;
+		padding: 6px 16px;
+		color: white;
+		border-radius: 12px !important;
+		border: 2px solid;
+		border-image-source: linear-gradient(270.78deg, #cecece 1%, #686868 101.53%);
+		border-image-slice: 1;
+		background-color: transparent;
+		-webkit-text-stroke: 0.3px gray;
+		transition: all 0.2s ease-in-out;
+		text-align: center;
+		box-sizing: border-box !important;
+	}
+
+	:global(.ant-btn.customModalButton:hover) {
+		background-color: transparent !important;
+		border-image-source: linear-gradient(270.78deg, #ffffff 1%, #999999 101.53%) !important;
+		color: #ddd !important;
+		-webkit-text-stroke: 0.3px lightgray !important;
+	}
+}
+
+.controls {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin: 16px 0;
+}
+
+.searchInput {
+	width: 100%;
+	padding: 10px 16px;
+	border-radius: 12px;
+	background-color: rgba(255, 255, 255, 0.08);
+	border: 1px solid #aaa;
+	color: white;
+	font-family: 'Arial Narrow', sans-serif;
+	font-size: 16px;
+	outline: none;
+	backdrop-filter: blur(4px);
+
+	&::placeholder {
+		color: #ccc;
+	}
+}
+
+.highlightControls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+
+	span {
+		font-size: 14px;
+		color: #ccc;
+		margin-left: 4px;
+	}
+}
+
+.textContainer {
+	max-height: 50vh;
+	overflow-y: auto;
+	white-space: pre-line;
+	line-height: 1.6;
+	font-size: 16px;
+	font-family: 'Arial Narrow', sans-serif;
+	padding-right: 8px;
+	color: white;
+}
+
+.textContainer::-webkit-scrollbar {
+	width: 8px;
+}
+
+.textContainer::-webkit-scrollbar-thumb {
+	background: #888;
+	border-radius: 4px;
+}
+
+.textContainer::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.mark {
+	background-color: #ffeeba;
+}
+
+.activeMark {
+	background-color: #ff0;
+}

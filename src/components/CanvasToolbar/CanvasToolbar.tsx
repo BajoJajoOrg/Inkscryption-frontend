@@ -440,17 +440,23 @@ export const Toolbar: FC<ToolbarProps> = ({
 							setAudioFile(null);
 						}}
 						disabled={isLoading}
+						className="customModalButton"
 					>
 						Отмена
 					</Button>,
-					<Button key="delete" onClick={deleteRecording} disabled={!audioFile || isLoading}>
+					<Button
+						key="delete"
+						onClick={deleteRecording}
+						disabled={!audioFile || isLoading}
+						className="customModalButton"
+					>
 						Удалить запись
 					</Button>,
 					<Button
 						key="upload"
-						type="primary"
 						onClick={handleAudioUpload}
 						disabled={!audioFile || isLoading}
+						className="customModalButton"
 					>
 						Отправить
 					</Button>,
@@ -459,18 +465,20 @@ export const Toolbar: FC<ToolbarProps> = ({
 			>
 				<div className={styles.audioRecorder}>
 					<Button
-						type="primary"
 						onClick={isRecording ? stopRecording : startRecording}
 						disabled={isLoading}
+						className="customModalButton"
 					>
 						{isRecording ? 'Остановить запись' : 'Начать запись'}
 					</Button>
+
 					{audioUrl && (
 						<div className={styles.audioPreview}>
 							<h3>Прослушать запись:</h3>
 							<audio src={audioUrl} controls />
 						</div>
 					)}
+
 					{isLoading && (
 						<div className={styles.loadingContainer}>
 							<Spin size="large" />
