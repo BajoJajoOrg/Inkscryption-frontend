@@ -16,7 +16,7 @@ const RegisterPage: React.FC = () => {
 		mutationFn: register,
 		onSuccess: (data) => {
 			setAuth(data.access_token, data.refresh_token);
-			navigate('/');
+			navigate('/home');
 		},
 		onError: (error: ErrorResponse) => {
 			console.error('Ошибка регистрации:', error.message);

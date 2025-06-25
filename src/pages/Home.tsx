@@ -67,7 +67,7 @@ const Home: React.FC = () => {
 	const navigate = useNavigate();
 
 	const getBreadcrumbItems = useMemo(() => {
-		const items = [{ title: 'Главная', href: '/', onClick: () => navigate('/') }];
+		const items = [{ title: 'Главная', href: '/home', onClick: () => navigate('/') }];
 		if (content.breadcrumbs.length > 0) {
 			content.breadcrumbs
 				.slice()

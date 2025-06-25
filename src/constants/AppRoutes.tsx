@@ -25,11 +25,11 @@ const PrivateRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 const AppRoutes: React.FC = () => {
 	return (
 		<Routes>
-			<Route path="/landing" element={<LandingPage />} />
+			<Route path="/" element={<LandingPage />} />
 			<Route path="/login" element={<LoginPage />} />
 			<Route path="/register" element={<RegisterPage />} />
 			<Route
-				path="/"
+				path="/home"
 				element={
 					<PrivateRoute>
 						<Home />

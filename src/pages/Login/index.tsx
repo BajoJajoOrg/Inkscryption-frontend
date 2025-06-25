@@ -17,7 +17,7 @@ const LoginPage: React.FC = () => {
 		onSuccess: (data) => {
 			setErrorMessage(null);
 			setAuth(data.access_token, data.refresh_token);
-			navigate('/');
+			navigate('/home');
 		},
 		onError: (error: ErrorResponse) => {
 			console.error('Ошибка входа:', error.error);

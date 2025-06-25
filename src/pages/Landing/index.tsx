@@ -15,12 +15,12 @@ const Header: React.FC = () => {
 			<div className={styles.headerInner}>
 				<img src={icon} className={styles.logo} />
 				<div className={styles.navButtons}>
-					<Button className={styles.customButtonB}>
+					{/* <Button className={styles.customButtonB}>
 						<Link to="/landing">контакты</Link>
 					</Button>
 					<Button className={styles.customButtonB}>
 						<Link to="/landing">о нас</Link>
-					</Button>
+					</Button> */}
 					<Button className={styles.customButtonB}>
 						<Link to="/login">войти</Link>
 					</Button>
