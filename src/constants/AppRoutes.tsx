@@ -2,23 +2,42 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Home from '../pages/Home';
 import CanvasPage from '../pages/CanvasPage';
 import NotFound from '../pages/NotFound';
-import { JSX } from 'react';
+import { JSX, useEffect, useState } from 'react';
 import { useAuthStore } from ':store';
 import LoginPage from ':pages/Login';
 import RegisterPage from ':pages/Register';
+import { refreshToken } from ':api';
 
 interface ProtectedRouteProps {
 	children: JSX.Element;
 }
 
 const PrivateRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-	const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
+    const [isLoading, setIsLoading] = useState(true);
 
-	if (!isAuthenticated) {
-		return <Navigate to="/login" replace />;
-	}
+    useEffect(() => {
+        const checkAuth = async () => {
+            if (!isAuthenticated) {
+                const refresh = localStorage.getItem('refresh_token');
+                if (refresh) {
+                    try {
+                        await refreshToken(refresh);
+                    } catch {
+                        useAuthStore.getState().logout();
+                    }
+                }
+            }
+            setIsLoading(false);
+        };
+        checkAuth();
+    }, [isAuthenticated]);
 
-	return children;
+    if (isLoading) {
+        return <div>Loading...</div>;
+    }
+
+    return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
 const AppRoutes: React.FC = () => {

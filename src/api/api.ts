@@ -1,6 +1,7 @@
 export const API_URL = import.meta.env.VITE_API_URL as string;
 
 import { useAuthStore } from ':store/authStore';
+import { refreshToken } from './auth';
 
 export interface ErrorResponse {
 	code: number;
@@ -33,37 +34,41 @@ export const handleResponse = async (response: Response) => {
 
 // Обёртка для запросов с авторизацией
 export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
-	const authStore = useAuthStore.getState();
-	let token = authStore.accessToken;
+	let token = localStorage.getItem('access_token');
 	if (!token) {
 		console.error('[DEBUG] No access token available');
 		throw new Error('No access token available. Please log in.');
 	}
-	// Создаём объект заголовков с явной типизацией
+
 	const headers: Record<string, string> = {
 		...(typeof options.headers === 'object' &&
 		!Array.isArray(options.headers) &&
 		!(options.headers instanceof Headers)
 			? options.headers
 			: {}),
-		...(token ? { Authorization: `Bearer ${token}` } : {}),
+		Authorization: `Bearer ${token}`,
 	};
 
-	// Для FormData не добавляем Content-Type
 	if (!(options.body instanceof FormData)) {
 		headers['Content-Type'] = 'application/json';
 	}
 
-	// Запрос
 	const response = await fetch(url, {
 		...options,
 		headers,
 	});
 
-	// Обработка 401
 	if (response.status === 401) {
-		authStore.logout();
-		throw new Error('Сессия истекла. Пожалуйста, войдите заново.');
+		console.log('Received 401, attempting refresh');
+		const refresh = localStorage.getItem('refresh_token');
+		if (refresh) {
+			token = await refreshToken(refresh);
+			headers.Authorization = `Bearer ${token}`;
+			return fetch(url, { ...options, headers });
+		} else {
+			useAuthStore.getState().logout();
+			throw new Error('Сессия истекла. Пожалуйста, войдите заново.');
+		}
 	}
 
 	return response;
